@@ -1,6 +1,6 @@
-import requests
-import json
+# importar librerias
 
+<<<<<<< HEAD
 def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades): # Para el punto 5
     """
         Busca una ciudad dentro de pronosticos_ciudades.
@@ -98,11 +98,30 @@ def mostrar_alertas_en_localizacion(pronostico_ciudad_json): # Para el punto 2
     print(f"Velocidad del viento: {pronostico_ciudad_json['weather']['wind_speed']} km/h | Direccion del viento: {pronostico_ciudad_json['weather']['wing_deg']} ")
     print(f"Descripcion: {pronostico_ciudad_json['weather']['description']}\n")
     input("Presione enter para continuar.")
+    
+=======
+
+def menu_csv():
+    opcion = "0"
+    while opcion != "5":
+        opcion = input("Datos de los últimos 5 años de:\n1. Promedio temperaturas\n2. Promedio humedad\n3. Milímetros máximos de lluvia\n4. Temperatura máxima\n5. Salir\n")
+        while opcion.isnumeric() is False or int(opcion) <= 0 or int(opcion) > 5:
+            opcion = input("Ingrese un número del menú: ")
+
+        if opcion == "1":
+            print("Mostrar gráfico de temperaturas")
+        elif opcion == "2":
+            print("Mostrar gráfico de humedad")
+        elif opcion == "3":
+            print("Milímetros de lluvia")
+        elif opcion == "4":
+            print("Temperatura máxima")
+
 
 def main():
+    # definir variables
     lat_lon = input("Introduzca latitud y longitud actual, separados por coma: ") # latitud, longitud
     coordenadas = lat_lon.split(",")
-    estado_menu = True
 
     URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL" # URL para el punto 3
     URL_INFORMES_ESPECIALES = "https://ws.smn.gob.ar/alerts/type/IE" # URL para punto 2 o 5
@@ -110,44 +129,46 @@ def main():
     URL_AVISOS_A_CORTO_PLAZO = "https://ws.smn.gob.ar/alerts/type/AC" # URL para punto 2 o 5
     URL_ESTADO_ACTUAL = "https://ws.smn.gob.ar/map_items/weather" # URL pronostico de varias ciudades, estado actual 
 
-    while estado_menu:
-        print("--MENU--")
-        print("1)Listado de alertas en localizacion ingresada por usuario(latitud, longitud) o localizacion actual")
-        print("2)Listar alertas a nivel nacional")
-        print("5)Pronostico extendido de una ciudad ingresada")
-        print("6)Salir")
-        opcion = input("Opcion: ")
+    opcion = "0"
+    while opcion != "6":
+        opcion = input("1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico extendido\n4. Datos históricos\n5. Tormetas por radar\n6. Salir\n")
+        while opcion.isnumeric() is False or int(opcion) <= 0 or int(opcion) > 6:
+            opcion = input("Ingrese un número del menú: ")
 
         if opcion == "1":
-            print("\na)Alertas en localizacion ingresada\nb)Alertas en localizacion actual")
-            opcion = input("Opcion: ")
+            print("a)Alertas en geolocalizacion ingresada\nb)Alertas en geolocalizacion actual")
+            decision = input("Opcion: ")
 
-            if opcion == "a":
+            if decision == "a":
                 lat_lon = input("Introduzca latitud y longitud, separados por coma: ")
                 coordenadas = lat_lon.split(",")
                 pronosticos = obtener_pronostico(URL_ESTADO_ACTUAL)
                 alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas, pronosticos)
                 mostrar_alertas_en_localizacion(alertas_en_localizacion)
-
             elif opcion == "b":
                 pronosticos = obtener_pronostico(URL_ESTADO_ACTUAL)
-                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas, pronosticos)
+                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas)
                 mostrar_alertas_en_localizacion(alertas_en_localizacion)
-                
+
         elif opcion == "2":
             alertas = obtener_alertas_nacionales(URL_ALERTAS_NACIONALES)
             mostrar_alertas_nacionales(alertas)
-        elif opcion == "5":
+
+        elif opcion == "3":
             ciudad_ingresada = input("Ingrese una ciudad: ").lower()
             pronosticos = obtener_pronostico(URL_PRONOSTICO_EXTENDIDO)
             datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
+
             while datos_ciudad == -1:
                 ciudad_ingresada = input("No se encuentra la ciudad. Intentelo nuevamente: ").lower()
                 datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
             mostrar_pronostico_en_ciudad_ingresada(datos_ciudad)
 
-        elif opcion == "6":
-            estado_menu = False
+        elif opcion == "4":
+            menu_csv()
+        elif opcion == "5":
+            print("Análisis de imagen")
+>>>>>>> 076444e0e43fccf66f71ed99bcb314ef2229d304
 
 
 main()
