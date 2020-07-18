@@ -3,31 +3,23 @@ import numpy as np
 import cv2
 
 
-def menu_ciudades(ciudades):
+def menu_ciudades():
     """ Muestra menú con nombres de las ciudades con radar enumeradas y pide al usuario que eliga una
-        Parámetro: diccionario con nombre de las ciudades a elegir como claves
-        Devuelve: cadena con el nombre de la ciudad elegida en minúsculas o '0' si se elige volver """
-    opcion = input("Ciudades con radar:\n1.Neuquén\n2.Bahía Blanca\n3.Santa Rosa\n4.Mar del Plata\n5.CABA\n6.Pergamino\n7.Santa Fe\n8.Cordoba\n9.Volver\n")
-    while opcion.isnumeric() is False or int(opcion) < 1 or int(opcion) > 9:
+        Devuelve: cadena con el nombre de la ciudad elegida en minúsculas """
+    opcion = input("Ciudades con radar:\n1.Neuquén\n2.Bahía Blanca\n3.Santa Rosa\n4.Mar del Plata\n5.CABA\n6.Pergamino\n7.Santa Fe\n8.Cordoba\n")
+    while opcion.isnumeric() is False or int(opcion) < 1 or int(opcion) > 8:
         opcion = input("Ingrese un número del menú: ")
 
-    ciudad = "0"
-    contador = 0
-    if opcion != "9":
-        for clave in ciudades.keys():
-            contador += 1
-            if contador == int(opcion):
-                ciudad = clave
+    lista_ciudades = ["neuquen", "bahia blanca", "santa rosa", "mar del plata", "caba", "pergamino", "santa fe", "cordoba"]
 
-    return ciudad
+    return lista_ciudades[int(opcion) - 1]
 
 
-def recortar_imagen(imagen, x, y):
-    """ Parámetros: imagen a recortar (matriz), coordenadas (x,y) del centro del recorte resultante
-        Devuelve: imagen recortada: una matriz de 160 x 160 """
-    diametro = 160
-    x -= (diametro//2)
-    y -= (diametro//2)
+def recortar_imagen(imagen, x, y, diametro):
+    """ Parámetros: imagen a recortar (matriz), coordenadas (x,y) del centro del recorte resultante y largo de los lados
+        Devuelve: imagen recortada: una matriz de diámetro x diámetro """
+    x -= (diametro // 2)
+    y -= (diametro // 2)
     recorte = imagen[y: y + diametro, x: x + diametro]
 
     return recorte
@@ -36,9 +28,9 @@ def recortar_imagen(imagen, x, y):
 def crear_mascara(imagen, rango1, rango2=()):
     """ Crea un filtro de la imagen con los colores ingresados en los rangos
         Parámetros: imagen a procesar (matriz) en formato BGR, tupla de dos elementos con el rango
-    mínimo y máximo respectivamente de color
+            mínimo y máximo respectivamente de color
         Devuelve: imagen en formato hsv en forma de matriz con elementos de
-        valor 0 donde no se encontro el color ingresado"""
+            valor 0 donde no se encontro el color ingresado"""
     imagen_hsv = cv2.cvtColor(imagen, cv2.COLOR_BGR2HSV)
 
     mascara = cv2.inRange(imagen_hsv, rango1[0], rango1[1])
@@ -50,51 +42,84 @@ def crear_mascara(imagen, rango1, rango2=()):
     return mascara
 
 
-def identificar_color(matriz):
-    """ Busca cantidad de valores distintos a 0 en una matriz
+def porcentaje_color(matriz):
+    """ Busca cantidad de valores distintos a 0 en una matriz y calcula su porcentaje
         Parametro: recive la matriz que se quiere analizar
-        Devuelve: True si encuentra más de 3 elementos sino False"""
-    bandera = False
+        Devuelve: float con el porcentaje de elementos encontrados con respecto a la cantidad de la matriz """
     contador = 0
+    cant_elementos = 0
     for fila in range(len(matriz)):
         for elemento in matriz[fila]:
+            cant_elementos += 1
             if elemento != 0:
                 contador += 1
 
-    if contador > 3:
-        bandera = True
-    return bandera
+    return (contador * 100) / cant_elementos
 
 
-def identificar_alerta(imagen, colores):
+def identificar_color(imagen, colores):
     """ Busca rangos de colores en una imagen y devuelve el tipo de alerta encontrada
-        Parametros: imagena que se desea analizar (matriz) y diccionario con los rangos de colores
-        Devuelve: string con el mensaje del tipo de alerta"""
+        Parametros: imagen que se desea analizar (matriz) y diccionario con los rangos de colores
+        Devuelve: entero con el color encontrado: 0 = ninguno, 1 = celeste-verde, 3 = amarillo-naranja, 4 = rojo, 5 = magenta """
     rangos = ["celeste-verde", "amarillo-naranja", "rojo1", "rojo2", "magenta"]
     contador = 0
 
-    alerta = identificar_color(crear_mascara(imagen, colores["celeste-verde"]))
-    while alerta is True and contador < 5:
+    mascara = crear_mascara(imagen, colores["celeste-verde"])
+    porcentaje = porcentaje_color(mascara)
+    while porcentaje != 0 and contador < 5:
+        if contador == 1:
+            mascara = crear_mascara(imagen, colores[rangos[contador + 1]], colores[rangos[contador + 2]])
+            contador += 1
+        elif contador != 4:
+            mascara = crear_mascara(imagen, colores[rangos[contador + 1]])
+
+        porcentaje = porcentaje_color(mascara)
         contador += 1
-        if contador != 5:
-            if contador == 2:
-                alerta = identificar_color(crear_mascara(imagen, colores[rangos[contador]], colores[rangos[contador+1]]))
-                contador += 1
-            else:
-                alerta = identificar_color(crear_mascara(imagen, colores[rangos[contador]]))
 
-    if contador == 0:
-        mensaje = "Sin alerta próxima"
-    elif contador == 1:
-        mensaje = "Nubosidad variada"
-    elif contador == 3:
-        mensaje = "Lluvias débiles"
-    elif contador == 4:
-        mensaje = "Tormenta moderada con mucha lluvia"
+    return contador
+
+
+def identificar_alerta(imagen, colores, diametro):
+    """ Analiza y muestra por pantalla el tipo de alerta, donde se ocaciona y las probabilidades de que ocurra
+        Parámetros: imagen para analizar (matriz), diccionario con rangos de colores formato hsv y diámetro del radar """
+    color_encontrado = identificar_color(imagen, colores)
+
+    print("Tipo de alerta para la ciudad elegida:")
+    if color_encontrado != 0:
+        if color_encontrado == 1:
+            print("---Nubosidad variada---")
+            mascara = crear_mascara(imagen, colores["celeste-verde"])
+        elif color_encontrado == 3:
+            print("---Lluvias débiles---")
+            mascara = crear_mascara(imagen, colores["amarillo-naranja"])
+        elif color_encontrado == 4:
+            print("---Tormenta moderada con mucha lluvia---")
+            mascara = crear_mascara(imagen, colores["rojo1"], colores["rojo2"])
+        else:
+            print("---Tormenta fuerte con posibilidad de granizo---")
+            mascara = crear_mascara(imagen, colores["magenta"])
+
+        if color_encontrado != 0:
+            cuad_1 = recortar_imagen(mascara, diametro // 4, diametro // 4, diametro // 2)
+            cuad_2 = recortar_imagen(mascara, (diametro * 3) // 4, diametro // 4, diametro // 2)
+            cuad_3 = recortar_imagen(mascara, diametro // 4, (diametro * 3) // 4, diametro // 2)
+            cuad_4 = recortar_imagen(mascara, (diametro * 3) // 4, (diametro * 3) // 4, diametro // 2)
+
+            cuadrantes = {"Noroeste": cuad_1, "Noreste": cuad_2, "Suroeste": cuad_3, "Sureste": cuad_4}
+
+            print("Probabilidades:")
+            for clave, valor in cuadrantes.items():
+                porcentaje = porcentaje_color(valor)
+                if porcentaje != 0:
+                    if porcentaje < 10:
+                        print(f"Bajas al {clave} de la ciudad")
+                    elif porcentaje > 70:
+                        print(f"Altas al {clave} de la ciudad")
+                    else:
+                        print(f"Medias al {clave} de la ciudad")
+
     else:
-        mensaje = "Tormenta fuerte con posibilidad de granizo"
-
-    return mensaje
+        print("Sin alerta próxima")
 
 
 def menu_csv():
@@ -116,6 +141,7 @@ def menu_csv():
 
 def main():
     # definir variables
+    diametro_radar = 160
     # cordenadas en pixeles del centro de cada ciudad, "nombre": (x,y)
     coor_ciudad = {"neuquen": (236, 439), "bahia blanca": (426, 430), "santa rosa": (369, 338),
                    "mar del plata": (578, 402), "caba": (555, 264), "pergamino": (482, 232),
@@ -143,13 +169,13 @@ def main():
         elif opcion == "4":
             menu_csv()
         elif opcion == "5":
-            ciudad = menu_ciudades(coor_ciudad)
-
-            while ciudad != "0":
+            seguir = "s"
+            while seguir != "n":
+                ciudad = menu_ciudades()
                 radar = cv2.imread("imagen_radar.png")
-                recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1])
-                print(identificar_alerta(recorte, rango_colores), "\n")
-                ciudad = menu_ciudades(coor_ciudad)
+                recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
+                identificar_alerta(recorte, rango_colores, diametro_radar)
+                seguir = input("\n¿Desea ver datos de otra ciudad? (s/n): ").lower()
 
 
 main()
