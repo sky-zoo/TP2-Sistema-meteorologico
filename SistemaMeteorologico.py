@@ -57,69 +57,62 @@ def porcentaje_color(matriz):
     return (contador * 100) / cant_elementos
 
 
-def identificar_color(imagen, colores):
+def buscar_color(imagen, colores):
     """ Busca rangos de colores en una imagen y devuelve el tipo de alerta encontrada
         Parametros: imagen que se desea analizar (matriz) y diccionario con los rangos de colores
-        Devuelve: entero con el color encontrado: 0 = ninguno, 1 = celeste-verde, 3 = amarillo-naranja, 4 = rojo, 5 = magenta """
-    rangos = ["celeste-verde", "amarillo-naranja", "rojo1", "rojo2", "magenta"]
+        Devuelve: lista con dos valores: un entero con el color encontrado (0 = magenta, 2 = rojo, 3 = amarillo-naranja,
+            4 = celeste-verde, 5 = ninguno) y un float con el porcentaje de color encontrado"""
+    rangos = ["magenta", "rojo1", "rojo2", "amarillo-naranja", "celeste-verde"]  # orden en el que busca los colores
     contador = 0
 
-    mascara = crear_mascara(imagen, colores["celeste-verde"])
+    mascara = crear_mascara(imagen, colores[rangos[contador]])
     porcentaje = porcentaje_color(mascara)
-    while porcentaje != 0 and contador < 5:
-        if contador == 1:
+    while porcentaje == 0 and contador < 5:
+        if contador == 0:
             mascara = crear_mascara(imagen, colores[rangos[contador + 1]], colores[rangos[contador + 2]])
+            porcentaje = porcentaje_color(mascara)
             contador += 1
         elif contador != 4:
             mascara = crear_mascara(imagen, colores[rangos[contador + 1]])
+            porcentaje = porcentaje_color(mascara)
 
-        porcentaje = porcentaje_color(mascara)
         contador += 1
 
-    return contador
+    return [contador, porcentaje]
 
 
-def identificar_alerta(imagen, colores, diametro):
-    """ Analiza y muestra por pantalla el tipo de alerta, donde se ocaciona y las probabilidades de que ocurra
-        Parámetros: imagen para analizar (matriz), diccionario con rangos de colores formato hsv y diámetro del radar """
-    color_encontrado = identificar_color(imagen, colores)
+def mostar_alerta(imagen, colores, diametro):
+    """ Separa la imagen en 4 y muestra las probabilidades de ocurrencia de la alerta más alta en cada uno"""
+    cuad_1 = recortar_imagen(imagen, diametro // 4, diametro // 4, diametro // 2)
+    cuad_2 = recortar_imagen(imagen, (diametro * 3) // 4, diametro // 4, diametro // 2)
+    cuad_3 = recortar_imagen(imagen, diametro // 4, (diametro * 3) // 4, diametro // 2)
+    cuad_4 = recortar_imagen(imagen, (diametro * 3) // 4, (diametro * 3) // 4, diametro // 2)
 
-    print("Tipo de alerta para la ciudad elegida:")
-    if color_encontrado != 0:
-        if color_encontrado == 1:
-            print("---Nubosidad variada---")
-            mascara = crear_mascara(imagen, colores["celeste-verde"])
-        elif color_encontrado == 3:
-            print("---Lluvias débiles---")
-            mascara = crear_mascara(imagen, colores["amarillo-naranja"])
-        elif color_encontrado == 4:
-            print("---Tormenta moderada con mucha lluvia---")
-            mascara = crear_mascara(imagen, colores["rojo1"], colores["rojo2"])
+    cuadrantes = {"Noroeste": cuad_1, "Noreste": cuad_2, "Suroeste": cuad_3, "Sureste": cuad_4}
+
+    for clave, valor in cuadrantes.items():
+        datos = buscar_color(valor, colores)
+
+        print(clave, "de la ciudad: ")
+        if datos[0] != 5:
+            if datos[0] == 0:
+                alerta = "tormentas fuertes con posibilidad de granizo"
+            elif datos[0] == 2:
+                alerta = "tormentas moderadas con mucha lluvia"
+            elif datos[0] == 3:
+                alerta = "lluvias débiles"
+            else:
+                alerta = "nubosidad variada"
+
+            if datos[1] < 3:
+                print("_Probabilidades bajas de", alerta, "\n")
+            elif datos[1] > 6:
+                print("_Probabilidades altas de", alerta, "\n")
+            else:
+                print("_Probabilidades medias de", alerta, "\n")
+
         else:
-            print("---Tormenta fuerte con posibilidad de granizo---")
-            mascara = crear_mascara(imagen, colores["magenta"])
-
-        if color_encontrado != 0:
-            cuad_1 = recortar_imagen(mascara, diametro // 4, diametro // 4, diametro // 2)
-            cuad_2 = recortar_imagen(mascara, (diametro * 3) // 4, diametro // 4, diametro // 2)
-            cuad_3 = recortar_imagen(mascara, diametro // 4, (diametro * 3) // 4, diametro // 2)
-            cuad_4 = recortar_imagen(mascara, (diametro * 3) // 4, (diametro * 3) // 4, diametro // 2)
-
-            cuadrantes = {"Noroeste": cuad_1, "Noreste": cuad_2, "Suroeste": cuad_3, "Sureste": cuad_4}
-
-            print("Probabilidades:")
-            for clave, valor in cuadrantes.items():
-                porcentaje = porcentaje_color(valor)
-                if porcentaje != 0:
-                    if porcentaje < 10:
-                        print(f"Bajas al {clave} de la ciudad")
-                    elif porcentaje > 70:
-                        print(f"Altas al {clave} de la ciudad")
-                    else:
-                        print(f"Medias al {clave} de la ciudad")
-
-    else:
-        print("Sin alerta próxima")
+            print(f"_Sin alerta próxima\n")
 
 
 def menu_csv():
@@ -174,8 +167,8 @@ def main():
                 ciudad = menu_ciudades()
                 radar = cv2.imread("imagen_radar.png")
                 recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
-                identificar_alerta(recorte, rango_colores, diametro_radar)
-                seguir = input("\n¿Desea ver datos de otra ciudad? (s/n): ").lower()
+                mostar_alerta(recorte, rango_colores, diametro_radar)
+                seguir = input("¿Desea ver datos de otra ciudad? (s/n): ").lower()
 
 
 main()
