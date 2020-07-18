@@ -1,6 +1,7 @@
 # importar librerias
+import requests
+import json
 
-<<<<<<< HEAD
 def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades): # Para el punto 5
     """
         Busca una ciudad dentro de pronosticos_ciudades.
@@ -98,8 +99,7 @@ def mostrar_alertas_en_localizacion(pronostico_ciudad_json): # Para el punto 2
     print(f"Velocidad del viento: {pronostico_ciudad_json['weather']['wind_speed']} km/h | Direccion del viento: {pronostico_ciudad_json['weather']['wing_deg']} ")
     print(f"Descripcion: {pronostico_ciudad_json['weather']['description']}\n")
     input("Presione enter para continuar.")
-    
-=======
+
 
 def menu_csv():
     opcion = "0"
@@ -147,7 +147,7 @@ def main():
                 mostrar_alertas_en_localizacion(alertas_en_localizacion)
             elif opcion == "b":
                 pronosticos = obtener_pronostico(URL_ESTADO_ACTUAL)
-                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas)
+                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas, pronosticos)
                 mostrar_alertas_en_localizacion(alertas_en_localizacion)
 
         elif opcion == "2":
@@ -168,7 +168,6 @@ def main():
             menu_csv()
         elif opcion == "5":
             print("Análisis de imagen")
->>>>>>> 076444e0e43fccf66f71ed99bcb314ef2229d304
 
 
 main()
