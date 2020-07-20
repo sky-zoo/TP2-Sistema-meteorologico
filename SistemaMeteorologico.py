@@ -42,35 +42,56 @@ def crear_mascara(imagen, rango1, rango2=()):
     return mascara
 
 
+def porcentaje_color(imagen, cantidad_pixeles):
+    """ Calcula porcentaje de pixeles con respecto al rango de colores identificados como tormenta
+        Parametros: imagen a color en formato BGR y un entero con la cantidad de pixeles de un rango de color
+        Devuelve: float con el porcentaje calculado """
+    # Rango de todos los colores de las alertas
+    rango_color1 = (np.array([0, 100, 100]), np.array([102, 255, 255]))
+    rango_color2 = (np.array([130, 75, 20]), np.array([179, 255, 255]))
+
+    mascara_tormentas = crear_mascara(imagen, rango_color1, rango_color2)
+    total_pixeles = cv2.countNonZero(mascara_tormentas)
+
+    porcentaje = round((cantidad_pixeles * 100) / total_pixeles, 2)
+
+    return porcentaje
+
+
 def buscar_color(imagen, colores):
     """ Busca rangos de colores en una imagen y devuelve datos del color más fuerte
-        Parametros: imagen que se desea analizar (matriz) y diccionario con los rangos de colores
-        Devuelve: lista con dos valores: una cadena con el color y un entero con la cantidad de pixeles encontrados """
+        Parametros: imagen que se desea analizar en formato BGR y diccionario con los rangos de colores
+        Devuelve: lista con dos valores: una cadena con el nombre del color encontrado o 'ninguno' si no se encontraron
+            colores y un float con el porcentaje de pixeles de ese color con respecto al total de la tormenta """
     rangos = ["magenta", "rojo1", "rojo2", "amarillo-naranja", "celeste-verde"]  # orden en el que busca los colores
     contador = 0
 
     mascara = crear_mascara(imagen, colores[rangos[contador]])
-    cantidad_color = cv2.countNonZero(mascara)
-    while cantidad_color == 0 and contador < 5:
+    cantidad_pixeles = cv2.countNonZero(mascara)
+    while cantidad_pixeles == 0 and contador < 5:
         if contador == 0:
             mascara = crear_mascara(imagen, colores[rangos[contador + 1]], colores[rangos[contador + 2]])
-            cantidad_color = cv2.countNonZero(mascara)
+            cantidad_pixeles = cv2.countNonZero(mascara)
             contador += 1
         elif contador != 4:
             mascara = crear_mascara(imagen, colores[rangos[contador + 1]])
-            cantidad_color = cv2.countNonZero(mascara)
+            cantidad_pixeles = cv2.countNonZero(mascara)
 
         contador += 1
 
     if contador != 5:
         if contador == 2:
-            color = "rojo"
+            color = "rojo-bordo"
         else:
             color = rangos[contador]
+
+        porcentaje = porcentaje_color(imagen, cantidad_pixeles)
+
     else:
         color = "ninguno"
+        porcentaje = 0.0
 
-    return [color, cantidad_color]
+    return [color, porcentaje]
 
 
 def identificar_alerta(imagen, colores, diametro):
@@ -85,20 +106,23 @@ def identificar_alerta(imagen, colores, diametro):
     for clave, valor in cuadrantes.items():
         datos = buscar_color(valor, colores)
 
-        if datos[0] != "ninguno":
-            print(f"Al {clave} de la ciudad se encontró {datos[1]} píxeles de {datos[0]}.")
+        if datos[0] != "ninguno" and datos[0] != "celeste-verde":
+            print(f"Al {clave} de la ciudad se encontró un {datos[1]}% de {datos[0]} en el area de tormenta.")
             if datos[0] == "magenta":
                 mensaje = "Tormentas fuertes con posibilidad de granizo"
-            elif datos[0] == "rojo":
+            elif datos[0] == "rojo-bordo":
                 mensaje = "Tormentas con mucha lluvia"
-            elif datos[0] == "amarillo-naranja":
-                mensaje = "Tormentas débiles"
             else:
-                mensaje = "Nubosidad variada"
+                mensaje = "Tormentas débiles"
+
+        elif datos[0] == "celeste-verde":
+            print(f"Al {clave} de la ciudad solo se encontraron tonos celeste y verdes.")
+            mensaje = "Sin alerta próxima"
         else:
+            print(f"Al {clave} de la ciudad no se encontraron colores.")
             mensaje = "Sin alerta próxima"
 
-        print(" Alerta: ", mensaje, "\n")
+        print("----", mensaje, "----\n")
 
 
 def menu_csv():
@@ -120,7 +144,7 @@ def menu_csv():
 
 def main():
     # definir variables
-    ruta_imagen = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200719_161000Z.png"
+    ruta_imagen = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200630_215000Z.png"
     diametro_radar = 160
     # cordenadas en pixeles del centro de cada ciudad, "nombre": (x,y)
     coor_ciudad = {"neuquen": (236, 439), "bahia blanca": (426, 430), "santa rosa": (369, 338),
