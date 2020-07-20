@@ -42,47 +42,39 @@ def crear_mascara(imagen, rango1, rango2=()):
     return mascara
 
 
-def porcentaje_color(matriz):
-    """ Busca cantidad de valores distintos a 0 en una matriz y calcula su porcentaje
-        Parametro: recive la matriz que se quiere analizar
-        Devuelve: float con el porcentaje de elementos encontrados con respecto a la cantidad de la matriz """
-    contador = 0
-    cant_elementos = 0
-    for fila in range(len(matriz)):
-        for elemento in matriz[fila]:
-            cant_elementos += 1
-            if elemento != 0:
-                contador += 1
-
-    return (contador * 100) / cant_elementos
-
-
 def buscar_color(imagen, colores):
-    """ Busca rangos de colores en una imagen y devuelve el tipo de alerta encontrada
+    """ Busca rangos de colores en una imagen y devuelve datos del color más fuerte
         Parametros: imagen que se desea analizar (matriz) y diccionario con los rangos de colores
-        Devuelve: lista con dos valores: un entero con el color encontrado (0 = magenta, 2 = rojo, 3 = amarillo-naranja,
-            4 = celeste-verde, 5 = ninguno) y un float con el porcentaje de color encontrado"""
+        Devuelve: lista con dos valores: una cadena con el color y un entero con la cantidad de pixeles encontrados """
     rangos = ["magenta", "rojo1", "rojo2", "amarillo-naranja", "celeste-verde"]  # orden en el que busca los colores
     contador = 0
 
     mascara = crear_mascara(imagen, colores[rangos[contador]])
-    porcentaje = porcentaje_color(mascara)
-    while porcentaje == 0 and contador < 5:
+    cantidad_color = cv2.countNonZero(mascara)
+    while cantidad_color == 0 and contador < 5:
         if contador == 0:
             mascara = crear_mascara(imagen, colores[rangos[contador + 1]], colores[rangos[contador + 2]])
-            porcentaje = porcentaje_color(mascara)
+            cantidad_color = cv2.countNonZero(mascara)
             contador += 1
         elif contador != 4:
             mascara = crear_mascara(imagen, colores[rangos[contador + 1]])
-            porcentaje = porcentaje_color(mascara)
+            cantidad_color = cv2.countNonZero(mascara)
 
         contador += 1
 
-    return [contador, porcentaje]
+    if contador != 5:
+        if contador == 2:
+            color = "rojo"
+        else:
+            color = rangos[contador]
+    else:
+        color = "ninguno"
+
+    return [color, cantidad_color]
 
 
-def mostar_alerta(imagen, colores, diametro):
-    """ Separa la imagen en 4 y muestra las probabilidades de ocurrencia de la alerta más alta en cada uno"""
+def identificar_alerta(imagen, colores, diametro):
+    """ Separa la imagen en 4 y muestra la alerta más alta de cada cuadrante """
     cuad_1 = recortar_imagen(imagen, diametro // 4, diametro // 4, diametro // 2)
     cuad_2 = recortar_imagen(imagen, (diametro * 3) // 4, diametro // 4, diametro // 2)
     cuad_3 = recortar_imagen(imagen, diametro // 4, (diametro * 3) // 4, diametro // 2)
@@ -93,26 +85,20 @@ def mostar_alerta(imagen, colores, diametro):
     for clave, valor in cuadrantes.items():
         datos = buscar_color(valor, colores)
 
-        print(clave, "de la ciudad: ")
-        if datos[0] != 5:
-            if datos[0] == 0:
-                alerta = "tormentas fuertes con posibilidad de granizo"
-            elif datos[0] == 2:
-                alerta = "tormentas moderadas con mucha lluvia"
-            elif datos[0] == 3:
-                alerta = "lluvias débiles"
+        if datos[0] != "ninguno":
+            print(f"Al {clave} de la ciudad se encontró {datos[1]} píxeles de {datos[0]}.")
+            if datos[0] == "magenta":
+                mensaje = "Tormentas fuertes con posibilidad de granizo"
+            elif datos[0] == "rojo":
+                mensaje = "Tormentas con mucha lluvia"
+            elif datos[0] == "amarillo-naranja":
+                mensaje = "Tormentas débiles"
             else:
-                alerta = "nubosidad variada"
-
-            if datos[1] < 3:
-                print("_Probabilidades bajas de", alerta, "\n")
-            elif datos[1] > 6:
-                print("_Probabilidades altas de", alerta, "\n")
-            else:
-                print("_Probabilidades medias de", alerta, "\n")
-
+                mensaje = "Nubosidad variada"
         else:
-            print(f"_Sin alerta próxima\n")
+            mensaje = "Sin alerta próxima"
+
+        print(" Alerta: ", mensaje, "\n")
 
 
 def menu_csv():
@@ -134,6 +120,7 @@ def menu_csv():
 
 def main():
     # definir variables
+    ruta_imagen = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200719_161000Z.png"
     diametro_radar = 160
     # cordenadas en pixeles del centro de cada ciudad, "nombre": (x,y)
     coor_ciudad = {"neuquen": (236, 439), "bahia blanca": (426, 430), "santa rosa": (369, 338),
@@ -165,9 +152,9 @@ def main():
             seguir = "s"
             while seguir != "n":
                 ciudad = menu_ciudades()
-                radar = cv2.imread("imagen_radar.png")
+                radar = cv2.imread(ruta_imagen)
                 recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
-                mostar_alerta(recorte, rango_colores, diametro_radar)
+                identificar_alerta(recorte, rango_colores, diametro_radar)
                 seguir = input("¿Desea ver datos de otra ciudad? (s/n): ").lower()
 
 
