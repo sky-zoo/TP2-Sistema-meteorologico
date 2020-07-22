@@ -7,7 +7,7 @@ RUTA = 'weatherdata--389-603.csv'
 def leer_archivo_historico():
     """
     Precondición: Realiza la lectura del archivo histórico csv.
-    Postcondición: Retorna una lista con los datos del archivo csv a ser procesados.
+    Postcondición: Retorna una lista con los datos del archivo csv.
     """
     lista_historico = []
 
