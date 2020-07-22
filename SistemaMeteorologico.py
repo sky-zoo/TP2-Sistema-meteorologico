@@ -176,10 +176,14 @@ def main():
             seguir = "s"
             while seguir != "n":
                 ciudad = menu_ciudades()
-                radar = cv2.imread(ruta_imagen)
-                recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
-                identificar_alerta(recorte, rango_colores, diametro_radar)
-                seguir = input("¿Desea ver datos de otra ciudad? (s/n): ").lower()
+                try:
+                    radar = cv2.imread(ruta_imagen)
+                    recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
+                    identificar_alerta(recorte, rango_colores, diametro_radar)
+                    seguir = input("¿Desea ver datos de otra ciudad? (s/n): ").lower()
+                except TypeError:
+                    print("---Error al leer la imagen, compruebe que la ruta lleve al archivo---\n")
+                    seguir = "n"
 
 
 main()
