@@ -478,7 +478,7 @@ def main():
             while datos_ciudad == {}:
                 ciudad_ingresada = input("No se encuentra la ciudad. Intentelo nuevamente: ").lower()
                 datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
-                mostrar_pronostico_en_ciudad_ingresada(datos_ciudad)
+            mostrar_pronostico_en_ciudad_ingresada(datos_ciudad)
 
         elif opcion_menu == "4":
             menu_csv()
