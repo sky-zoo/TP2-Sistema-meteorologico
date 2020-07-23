@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 import cv2
+import sys
 
 
 RUTA_ARCHIVO = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\weatherdata--389-603.csv"
@@ -134,16 +135,20 @@ def leer_archivo_historico():
     """
     lista_historico = []
 
-    with open(RUTA_ARCHIVO) as csvfile:
-        archivo = csv.DictReader(csvfile)
+    try:
+        with open(RUTA_ARCHIVO) as csvfile:
+            archivo = csv.DictReader(csvfile)
 
-        for dato in archivo:
-            reg = {"fecha": dato['Date'], "temp_max": dato['Max Temperature'], "temp_min": dato['Min Temperature'],
-                   "precipitacion": dato['Precipitation'], "humedad_relativa": dato['Relative Humidity']}
+            for dato in archivo:
+                reg = {"fecha": dato['Date'], "temp_max": dato['Max Temperature'], "temp_min": dato['Min Temperature'], "precipitacion": dato['Precipitation'], "humedad_relativa": dato['Relative Humidity']}
 
-            lista_historico.append(reg)
+                lista_historico.append(reg)
 
-    return lista_historico
+        return lista_historico
+
+    except Exception as error:
+        print("Error:", error)
+        sys.exit()
 
 
 def obtener_lista_año_temperatura(lista_historico):
@@ -309,7 +314,7 @@ def imprimir_grafico_humedades(datos_graficos_humedades):
     plt.bar(años, humedades, width=0.6, color='lightblue')
 
     plt.title("Promedio de las humedades de los ultimos 5 años en Argentina")
-    plt.legend(["Humedades"])
+    plt.legend(["Humedades %"])
 
     plt.show()
 
@@ -391,7 +396,7 @@ def temp_max():
     Lee el archivo histórico, obtiene la temperatura máxima e imprime por pantalla.
     """
     arch_historico = leer_archivo_historico()
-    temperatura_max, fecha_temp_max = obtener_temperatura_max(arch_historico)
+    fecha_temp_max, temperatura_max = obtener_temperatura_max(arch_historico)
     print("\n------ Temperatura máxima ------")
     print("Medición      | Temperatura")
     print(f"Valor máximo  | {temperatura_max}")
@@ -558,7 +563,7 @@ def imprimir_menu():
     print("           T O R M E N T A               ")
     print("-----------------------------------------")
     print(
-        "1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico\n4. Datos históricos\n5. Tormetas por radar\n6. Salir")
+        "1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico\n4. Datos históricos\n5. Tormentas por radar\n6. Salir")
 
 
 def main():
@@ -628,7 +633,7 @@ def main():
             while datos_ciudad == {}:
                 ciudad_ingresada = input("No se encuentra la ciudad. Intentelo nuevamente: ").lower()
                 datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
-                mostrar_pronostico_en_ciudad_ingresada(datos_ciudad)
+            mostrar_pronostico_en_ciudad_ingresada(datos_ciudad)
 
         elif opcion_menu == "4":
             menu_csv()
