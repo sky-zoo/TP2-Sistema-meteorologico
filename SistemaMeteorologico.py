@@ -28,16 +28,16 @@ def menu_csv():
             opcion_csv = input("Por favor, ingrese un número válido: ")
 
         if opcion_csv == "1":
-            historico_csv.grafico_temperaturas()
+            grafico_temperaturas()
 
         elif opcion_csv == "2":
-            historico_csv.grafico_humedades()
+            grafico_humedades()
 
         elif opcion_csv == "3":
-            historico_csv.mm_max_lluvia()
+            mm_max_lluvia()
 
         elif opcion_csv == "4":
-            historico_csv.temp_max()
+            temp_max()
 
 
 def main():
