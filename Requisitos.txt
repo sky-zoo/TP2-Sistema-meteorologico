@@ -1,0 +1,5 @@
+libreria    --    paquete    --    version
+numpy		  numpy		   1.19.0
+matplotlib        matplotlib       3.3.0
+requests          requests         2.24.0
+cv2		  opencv-python    4.3.0.36
