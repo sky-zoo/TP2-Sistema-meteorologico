@@ -5,8 +5,126 @@ import requests
 import cv2
 
 
-RUTA = 'weatherdata--389-603.csv'
+RUTA_ARCHIVO = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\weatherdata--389-603.csv"
 RUTA_IMAGEN = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200630_215000Z.png"
+
+
+def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades):  # Para el punto 5
+    """
+        Busca una ciudad dentro de pronosticos_ciudades.
+        Precondicion: debe ingresarse una ciudad para buscar, y debe ingresarse como segundo parametro
+        un objeto JSON que contenga el pronostico a 3 dias de varias ciudades.
+        Postcondicion: devuelve un diccionario con los datos de la ciudad ingresada. Si no se encuentra la ciudad devuelve un diccionario vacio.
+    """
+    ciudad_no_existe = True
+    datos_ciudad = {}
+    while ciudad_no_existe:
+        for ciudad in range(len(pronosticos_ciudades)):
+            if ciudad_ingresada == pronosticos_ciudades[ciudad]['name'].lower():
+                datos_ciudad = pronosticos_ciudades[ciudad]
+        ciudad_no_existe = False
+
+    return datos_ciudad
+
+
+def obtener_url(url):  # Para el punto 3
+    """
+        Obtiene informacion de la url ingresada.
+        Precondicion: se debe ingresar una url.
+        Postcondicion: devuelve un objeto JSON.
+    """
+    informacion = requests.get(url).json()
+    return informacion
+
+
+def obtener_alertas_en_localizacion_ingresada(coordenadas, pronostico_ciudades_json):  # Para el punto 2
+    """
+        Obtiene las alertas en una localizacion ingresada por el usuario.
+        Precondicion: debe ingresarse una lista con las coordenadas, siendo el primer indice la latitud y el segundo indice la longitud.
+        Postcondicion: si se encuentra la ciudad, devuelve la ciudad con todas sus alertas. Si no se encuentra la ciudad devuelve -1.
+    """
+    localizacion_no_existe = True
+
+    while localizacion_no_existe:
+        for ciudad in range(len(pronostico_ciudades_json)):
+            if coordenadas[0] == pronostico_ciudades_json[ciudad]['lat'] and coordenadas[1] == \
+                    pronostico_ciudades_json[ciudad]['lon']:
+                alertas_ciudad = pronostico_ciudades_json[ciudad]
+        localizacion_no_existe = False
+    return alertas_ciudad
+
+
+def obtener_coordenadas(ciudad_ingresada, pronostico_ciudades_json):
+    """
+        Obtiene las coordenadas del usuario dependiendo de la ciudad que escriba.
+        Precondicion: debe ingresarse un string, la cual tiene que indicar el nombre de la ciudad en la que esta el usuario.
+        y un objeto JSON que contenga la informacion del clima de varias ciudades.
+        Postcondicion: devuelve las coordenadas en forma de lista, asi: [latitud, longitud]
+    """
+    ciudad_no_encontrada = True
+    coordenadas = [0, 0]
+    while ciudad_no_encontrada:
+        for ciudad in range(len(pronostico_ciudades_json)):
+            if ciudad_ingresada.lower() == pronostico_ciudades_json[ciudad]['name'].lower():
+                coordenadas[0] = pronostico_ciudades_json[ciudad]['lat']
+                coordenadas[1] = pronostico_ciudades_json[ciudad]['lon']
+        ciudad_no_encontrada = False
+    return coordenadas
+
+
+def mostrar_alertas_nacionales(alertas_nacionales_json):  # Este es para el punto 3
+    """
+        Muestra en consola todas las alertas nacionales.
+        Precondicion: debe ingresarse un objeto JSON con las alertas nacionales.
+    """
+    for numero_alerta in range(len(alertas_nacionales_json)):
+        print("-" * 80)
+        print(f"Alerta numero {numero_alerta + 1}\n")
+        print("Zonas afectadas: ", end="")
+        for zonas in alertas_nacionales_json[numero_alerta]['zones'].values():
+            print(f"{zonas}", end=". ")
+        print("\n")
+        print(
+            f"Titulo: {alertas_nacionales_json[numero_alerta]['title']}\nEstado: {alertas_nacionales_json[numero_alerta]['status']}\n")
+        print(
+            f"Fecha: {alertas_nacionales_json[numero_alerta]['date']}\nA la hora: {alertas_nacionales_json[numero_alerta]['hour']}\n")
+        print(f"Descripcion: {alertas_nacionales_json[numero_alerta]['description']}\n")
+        print(f"Actualizacion: {alertas_nacionales_json[numero_alerta]['update']}\n")
+        input("Presione enter para continuar.")
+
+
+def mostrar_pronostico_en_ciudad_ingresada(pronostico_ciudad_json):  # Para el punto 5
+    """
+        Muestra al usuario el pronostico extendido a 3 dias en la ciudad que ingresó.
+        Precondicion: se debe ingresar una lista con dos espacios, el primer espacio es la latitud y
+        la segunda, la longitud.
+    """
+    print("-" * 80)
+    print(f"Pronostico extendido a 3 dias para {pronostico_ciudad_json['name']}, {pronostico_ciudad_json['province']} ")
+    print(f"Temperatura por la mañana: {pronostico_ciudad_json['weather']['morning_temp']}ºC", end=", ")
+    print(f"temperatura por la tarde: {pronostico_ciudad_json['weather']['afternoon_temp']}ºC\n")
+    print(f"Descripcion por la mañana: {pronostico_ciudad_json['weather']['morning_desc']}")
+    print(f"Descripcion por la tarde: {pronostico_ciudad_json['weather']['afternoon_desc']}")
+    input("Presione enter para continuar.\n")
+
+
+def mostrar_alertas_en_localizacion(pronostico_ciudad_json):  # Para el punto 2
+    """
+        Muestra al usuario el estado actual del pronostico en la localizacion que ingresó.
+        Precondicion: debe ingresarse un objeto JSON con el pronostico actual de la ciudad que se haya ingresado.
+    """
+    print("-" * 80)
+    print(f"Estado actual para {pronostico_ciudad_json['name']}({pronostico_ciudad_json['province']})\n")
+    print(
+        f"Temperatura: {pronostico_ciudad_json['weather']['temp']}ºC | Humedad: {pronostico_ciudad_json['weather']['humidity']}%",
+        end=" | ")
+    print(
+        f"Presion: {pronostico_ciudad_json['weather']['pressure']} hPa | Visibilidad: {pronostico_ciudad_json['weather']['visibility']} km",
+        end=" | ")
+    print(
+        f"Velocidad del viento: {pronostico_ciudad_json['weather']['wind_speed']} km/h | Direccion del viento: {pronostico_ciudad_json['weather']['wing_deg']} ")
+    print(f"Descripcion: {pronostico_ciudad_json['weather']['description']}\n")
+    input("Presione enter para continuar.")
 
 
 def leer_archivo_historico():
@@ -16,7 +134,7 @@ def leer_archivo_historico():
     """
     lista_historico = []
 
-    with open(RUTA) as csvfile:
+    with open(RUTA_ARCHIVO) as csvfile:
         archivo = csv.DictReader(csvfile)
 
         for dato in archivo:
@@ -279,165 +397,6 @@ def temp_max():
     print(f"Valor máximo  | {temperatura_max}")
     print(f"Fecha         | {fecha_temp_max}")
 
-
-def imprimir_menu():
-    """
-    Imprime el menu principal de la aplicación.
-    """
-    print("-----------------------------------------")
-    print("           T O R M E N T A               ")
-    print("-----------------------------------------")
-    print(
-        "1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico\n4. Datos históricos\n5. Tormetas por radar\n6. Salir")
-
-
-def imprimir_menu_csv():
-    """
-    Imprime el menu para el archivo histórico.
-    """
-    print("\n---------- Datos históricos ----------")
-    print(
-        "Datos de los últimos 5 años de:\n1. Promedio temperaturas\n2. Promedio humedad\n3. Milímetros máximos de lluvia\n4. Temperatura máxima\n5. Salir")
-
-
-def menu_csv():
-    opcion_csv = "0"
-    while opcion_csv != "5":
-        imprimir_menu_csv()
-        opcion_csv = input("\nIngrese la opción que desea: ")
-        while opcion_csv.isnumeric() is False or int(opcion_csv) <= 0 or int(opcion_csv) > 5:
-            opcion_csv = input("Por favor, ingrese un número válido: ")
-
-        if opcion_csv == "1":
-            grafico_temperaturas()
-
-        elif opcion_csv == "2":
-            grafico_humedades()
-
-        elif opcion_csv == "3":
-            mm_max_lluvia()
-
-        elif opcion_csv == "4":
-            temp_max()
-
-
-def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades):  # Para el punto 5
-    """
-        Busca una ciudad dentro de pronosticos_ciudades.
-        Precondicion: debe ingresarse una ciudad para buscar, y debe ingresarse como segundo parametro
-        un objeto JSON que contenga el pronostico a 3 dias de varias ciudades.
-        Postcondicion: devuelve un diccionario con los datos de la ciudad ingresada. Si no se encuentra la ciudad devuelve un diccionario vacio.
-    """
-    ciudad_no_existe = True
-    datos_ciudad = {}
-    while ciudad_no_existe:
-        for ciudad in range(len(pronosticos_ciudades)):
-            if ciudad_ingresada == pronosticos_ciudades[ciudad]['name'].lower():
-                datos_ciudad = pronosticos_ciudades[ciudad]
-        ciudad_no_existe = False
-
-    return datos_ciudad
-
-
-def obtener_url(url):  # Para el punto 3
-    """
-        Obtiene informacion de la url ingresada.
-        Precondicion: se debe ingresar una url.
-        Postcondicion: devuelve un objeto JSON.
-    """
-    informacion = requests.get(url).json()
-    return informacion
-
-
-def obtener_alertas_en_localizacion_ingresada(coordenadas, pronostico_ciudades_json):  # Para el punto 2
-    """
-        Obtiene las alertas en una localizacion ingresada por el usuario.
-        Precondicion: debe ingresarse una lista con las coordenadas, siendo el primer indice la latitud y el segundo indice la longitud.
-        Postcondicion: si se encuentra la ciudad, devuelve la ciudad con todas sus alertas. Si no se encuentra la ciudad devuelve -1.
-    """
-    localizacion_no_existe = True
-
-    while localizacion_no_existe:
-        for ciudad in range(len(pronostico_ciudades_json)):
-            if coordenadas[0] == pronostico_ciudades_json[ciudad]['lat'] and coordenadas[1] == \
-                    pronostico_ciudades_json[ciudad]['lon']:
-                alertas_ciudad = pronostico_ciudades_json[ciudad]
-        localizacion_no_existe = False
-    return alertas_ciudad
-
-
-def obtener_coordenadas(ciudad_ingresada, pronostico_ciudades_json):
-    """
-        Obtiene las coordenadas del usuario dependiendo de la ciudad que escriba.
-        Precondicion: debe ingresarse un string, la cual tiene que indicar el nombre de la ciudad en la que esta el usuario.
-        y un objeto JSON que contenga la informacion del clima de varias ciudades.
-        Postcondicion: devuelve las coordenadas en forma de lista, asi: [latitud, longitud]
-    """
-    ciudad_no_encontrada = True
-    coordenadas = [0, 0]
-    while ciudad_no_encontrada:
-        for ciudad in range(len(pronostico_ciudades_json)):
-            if ciudad_ingresada.lower() == pronostico_ciudades_json[ciudad]['name'].lower():
-                coordenadas[0] = pronostico_ciudades_json[ciudad]['lat']
-                coordenadas[1] = pronostico_ciudades_json[ciudad]['lon']
-        ciudad_no_encontrada = False
-    return coordenadas
-
-
-def mostrar_alertas_nacionales(alertas_nacionales_json):  # Este es para el punto 3
-    """
-        Muestra en consola todas las alertas nacionales.
-        Precondicion: debe ingresarse un objeto JSON con las alertas nacionales.
-    """
-    for numero_alerta in range(len(alertas_nacionales_json)):
-        print("-" * 80)
-        print(f"Alerta numero {numero_alerta + 1}\n")
-        print("Zonas afectadas: ", end="")
-        for zonas in alertas_nacionales_json[numero_alerta]['zones'].values():
-            print(f"{zonas}", end=". ")
-        print("\n")
-        print(
-            f"Titulo: {alertas_nacionales_json[numero_alerta]['title']}\nEstado: {alertas_nacionales_json[numero_alerta]['status']}\n")
-        print(
-            f"Fecha: {alertas_nacionales_json[numero_alerta]['date']}\nA la hora: {alertas_nacionales_json[numero_alerta]['hour']}\n")
-        print(f"Descripcion: {alertas_nacionales_json[numero_alerta]['description']}\n")
-        print(f"Actualizacion: {alertas_nacionales_json[numero_alerta]['update']}\n")
-        input("Presione enter para continuar.")
-
-
-def mostrar_pronostico_en_ciudad_ingresada(pronostico_ciudad_json):  # Para el punto 5
-    """
-        Muestra al usuario el pronostico extendido a 3 dias en la ciudad que ingresó.
-        Precondicion: se debe ingresar una lista con dos espacios, el primer espacio es la latitud y
-        la segunda, la longitud.
-    """
-    print("-" * 80)
-    print(f"Pronostico extendido a 3 dias para {pronostico_ciudad_json['name']}, {pronostico_ciudad_json['province']} ")
-    print(f"Temperatura por la mañana: {pronostico_ciudad_json['weather']['morning_temp']}ºC", end=", ")
-    print(f"temperatura por la tarde: {pronostico_ciudad_json['weather']['afternoon_temp']}ºC\n")
-    print(f"Descripcion por la mañana: {pronostico_ciudad_json['weather']['morning_desc']}")
-    print(f"Descripcion por la tarde: {pronostico_ciudad_json['weather']['afternoon_desc']}")
-    input("Presione enter para continuar.\n")
-
-
-def mostrar_alertas_en_localizacion(pronostico_ciudad_json):  # Para el punto 2
-    """
-        Muestra al usuario el estado actual del pronostico en la localizacion que ingresó.
-        Precondicion: debe ingresarse un objeto JSON con el pronostico actual de la ciudad que se haya ingresado.
-    """
-    print("-" * 80)
-    print(f"Estado actual para {pronostico_ciudad_json['name']}({pronostico_ciudad_json['province']})\n")
-    print(
-        f"Temperatura: {pronostico_ciudad_json['weather']['temp']}ºC | Humedad: {pronostico_ciudad_json['weather']['humidity']}%",
-        end=" | ")
-    print(
-        f"Presion: {pronostico_ciudad_json['weather']['pressure']} hPa | Visibilidad: {pronostico_ciudad_json['weather']['visibility']} km",
-        end=" | ")
-    print(
-        f"Velocidad del viento: {pronostico_ciudad_json['weather']['wind_speed']} km/h | Direccion del viento: {pronostico_ciudad_json['weather']['wing_deg']} ")
-    print(f"Descripcion: {pronostico_ciudad_json['weather']['description']}\n")
-    input("Presione enter para continuar.")
-
           
 def menu_ciudades():
     """ Muestra menú con nombres de las ciudades con radar enumeradas y pide al usuario que eliga una
@@ -561,9 +520,48 @@ def identificar_alerta(imagen, colores, diametro):
         print("----", mensaje, "----\n")
 
 
-def main():
-    # definir variables
+def imprimir_menu_csv():
+    """
+    Imprime el menu para el archivo histórico.
+    """
+    print("\n---------- Datos históricos ----------")
+    print(
+        "Datos de los últimos 5 años de:\n1. Promedio temperaturas\n2. Promedio humedad\n3. Milímetros máximos de lluvia\n4. Temperatura máxima\n5. Salir")
 
+
+def menu_csv():
+    opcion_csv = "0"
+    while opcion_csv != "5":
+        imprimir_menu_csv()
+        opcion_csv = input("\nIngrese la opción que desea: ")
+        while opcion_csv.isnumeric() is False or int(opcion_csv) <= 0 or int(opcion_csv) > 5:
+            opcion_csv = input("Por favor, ingrese un número válido: ")
+
+        if opcion_csv == "1":
+            grafico_temperaturas()
+
+        elif opcion_csv == "2":
+            grafico_humedades()
+
+        elif opcion_csv == "3":
+            mm_max_lluvia()
+
+        elif opcion_csv == "4":
+            temp_max()
+
+
+def imprimir_menu():
+    """
+    Imprime el menu principal de la aplicación.
+    """
+    print("-----------------------------------------")
+    print("           T O R M E N T A               ")
+    print("-----------------------------------------")
+    print(
+        "1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico\n4. Datos históricos\n5. Tormetas por radar\n6. Salir")
+
+
+def main():
     URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL"  # URL para el punto 3
     URL_INFORMES_ESPECIALES = "https://ws.smn.gob.ar/alerts/type/IE"  # URL para punto 2 o 5
     URL_PRONOSTICO_EXTENDIDO = "https://ws.smn.gob.ar/map_items/forecast/3"  # URL pronostico extendido a 3 dias
