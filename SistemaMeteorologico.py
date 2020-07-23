@@ -4,6 +4,7 @@ import numpy as np
 import requests
 import cv2
 
+
 RUTA = 'weatherdata--389-603.csv'
 RUTA_IMAGEN = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200630_215000Z.png"
 
@@ -437,7 +438,7 @@ def mostrar_alertas_en_localizacion(pronostico_ciudad_json):  # Para el punto 2
     print(f"Descripcion: {pronostico_ciudad_json['weather']['description']}\n")
     input("Presione enter para continuar.")
 
-
+          
 def menu_ciudades():
     """ Muestra menú con nombres de las ciudades con radar enumeradas y pide al usuario que eliga una
         Devuelve: cadena con el nombre de la ciudad elegida en minúsculas """
@@ -447,8 +448,8 @@ def menu_ciudades():
 
     lista_ciudades = ["neuquen", "bahia blanca", "santa rosa", "mar del plata", "caba", "pergamino", "santa fe", "cordoba"]
 
-    return lista_ciudades[int(opcion) - 1]
-
+    return lista_ciudades[int(opcion) - 1]  
+          
 
 def recortar_imagen(imagen, x, y, diametro):
     """ Parámetros: imagen a recortar (matriz), coordenadas (x,y) del centro del recorte resultante y largo de los lados
@@ -458,8 +459,8 @@ def recortar_imagen(imagen, x, y, diametro):
     recorte = imagen[y: y + diametro, x: x + diametro]
 
     return recorte
-
-
+          
+          
 def crear_mascara(imagen, rango1, rango2=()):
     """ Crea un filtro de la imagen con los colores ingresados en los rangos
         Parámetros: imagen a procesar (matriz) en formato BGR, tupla de dos elementos con el rango
@@ -475,8 +476,8 @@ def crear_mascara(imagen, rango1, rango2=()):
         mascara = cv2.add(mascara, mascara2)
 
     return mascara
-
-
+          
+          
 def porcentaje_color(imagen, cantidad_pixeles):
     """ Calcula porcentaje de pixeles con respecto al rango de colores identificados como tormenta
         Parametros: imagen a color en formato BGR y un entero con la cantidad de pixeles de un rango de color
@@ -491,8 +492,8 @@ def porcentaje_color(imagen, cantidad_pixeles):
     porcentaje = round((cantidad_pixeles * 100) / total_pixeles, 2)
 
     return porcentaje
-
-
+          
+          
 def buscar_color(imagen, colores):
     """ Busca rangos de colores en una imagen y devuelve datos del color más fuerte
         Parametros: imagen que se desea analizar en formato BGR y diccionario con los rangos de colores
@@ -648,5 +649,5 @@ def main():
                     print("---Error al leer la imagen, compruebe que la ruta lleve al archivo---\n")
                     seguir = "n"
 
-
+          
 main()
