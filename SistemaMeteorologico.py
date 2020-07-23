@@ -8,9 +8,8 @@ def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades): # Para el punto 5
         un objeto JSON que contenga el pronostico a 3 dias de varias ciudades.
         Postcondicion: devuelve un diccionario con los datos de la ciudad ingresada. Si no se encuentra la ciudad devuelve un diccionario vacio.
     """
-    datos_ciudad = {}
     ciudad_no_existe = True
-
+    datos_ciudad = {}
     while ciudad_no_existe:
         for ciudad in range(len(pronosticos_ciudades)):
             if ciudad_ingresada == pronosticos_ciudades[ciudad]['name'].lower():
@@ -34,7 +33,6 @@ def obtener_alertas_en_localizacion_ingresada(coordenadas, pronostico_ciudades_j
         Precondicion: debe ingresarse una lista con las coordenadas, siendo el primer indice la latitud y el segundo indice la longitud.
         Postcondicion: si se encuentra la ciudad, devuelve la ciudad con todas sus alertas. Si no se encuentra la ciudad devuelve -1.
     """
-    alertas_ciudad = {}
     localizacion_no_existe = True
 
     while localizacion_no_existe:
