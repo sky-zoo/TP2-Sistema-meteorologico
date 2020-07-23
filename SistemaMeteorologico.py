@@ -567,10 +567,8 @@ def imprimir_menu():
 
 
 def main():
-    URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL"  # URL para el punto 3
-    URL_INFORMES_ESPECIALES = "https://ws.smn.gob.ar/alerts/type/IE"  # URL para punto 2 o 5
+    URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL"
     URL_PRONOSTICO_EXTENDIDO = "https://ws.smn.gob.ar/map_items/forecast/3"  # URL pronostico extendido a 3 dias
-    URL_AVISOS_A_CORTO_PLAZO = "https://ws.smn.gob.ar/alerts/type/AC"  # URL para punto 2 o 5
     URL_ESTADO_ACTUAL = "https://ws.smn.gob.ar/map_items/weather"  # URL pronostico de varias ciudades, estado actual
 
     diametro_radar = 160
