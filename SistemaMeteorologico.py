@@ -2,6 +2,7 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 RUTA = 'weatherdata--389-603.csv'
 
 def leer_archivo_historico():
@@ -339,4 +340,6 @@ def main():
         elif opcion_menu == "5":
             print("\n---------- Análisis de imagen ----------")
 
+
 main()
+
