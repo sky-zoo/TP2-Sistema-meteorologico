@@ -5,6 +5,7 @@ import requests
 import cv2
 import sys
 
+#prueba
 
 RUTA_ARCHIVO = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\weatherdata--389-603.csv"
 RUTA_IMAGEN = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200630_215000Z.png"
