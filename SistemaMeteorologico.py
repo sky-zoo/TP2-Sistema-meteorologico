@@ -35,8 +35,7 @@ def obtener_url(url):  # Para el punto 3
         Precondicion: se debe ingresar una url.
         Postcondicion: devuelve un objeto JSON.
     """
-    informacion = requests.get(url).json()
-    return informacion
+    return requests.get(url).json()
 
 
 def obtener_alertas_en_localizacion_ingresada(coordenadas, pronostico_ciudades_json):  # Para el punto 2
@@ -73,7 +72,7 @@ def obtener_coordenadas(ciudad_ingresada, pronostico_ciudades_json):
         for ciudad in range(len(pronostico_ciudades_json)):
             if ciudad_ingresada.lower() == pronostico_ciudades_json[ciudad]['name'].lower():
                 coordenadas[0] = pronostico_ciudades_json[ciudad]['lat']
-                coordenadas[1] = pronostico_ciudades_json[ciudad]['lon']
+                coordenadas[1] = pronostico_ciudades_json[ciudad]['lon']                               
                 # CORTAR CICLO CON UN RETURN P/ EVITAR ITERACIONES INNECESARIAS
         ciudad_no_encontrada = False
     return coordenadas
@@ -142,7 +141,7 @@ def leer_archivo_historico():
     lista_historico = []
     
     try:
- 
+        # NOMBRE_ARCHIVO
         with open('weatherdata--389-603.csv') as csvfile:
             archivo = csv.DictReader(csvfile)
             # FALTARÍA QUE SEA A PARTIR DE LOS ULTIMOS 5 AÑOS ASÍ SE ESTÁN GUARDANDO VALORES QUE NO USAN DESPUÉS 
@@ -187,12 +186,11 @@ def obtener_lista_año_humedad(lista_historico):
     Precondición: Obtiene porcentaje promedio de humedad por cada registro. Recibe la lista del archivo historico.
     Postcondición: Retorna lista con los datos año y porcentaje humedad.
     """
-    lista_año_humedad = []
+    lista_anio_humedad = []
 
     for dato in lista_historico:
         fecha_humedad = dato['fecha']
         año_humedad = fecha_humedad[-4::]
-        # YA ES UN PORCENTAJE LA HR
         humedad_relativa = float(dato['humedad_relativa'])
         humedad_porcentaje = round(humedad_relativa * 100)
 
@@ -239,7 +237,7 @@ def obtener_listas_años_temperaturas(lista_año_temperatura):
 def obtener_listas_años_humedades(lista_año_humedad):
     # PRE
     """
-    Precondición: Obtiene humedad promedio (promedio del año). Recibe lista de datos año, humedad.
+    Precondición: Obtiene humedad promedio (promedio del año). Recibe lista de datos año, humedad La lista debe estar formada con el siguiente formato [año, humedad].
     Postcondición: Retorna dos listas, una con los años y otra con las humedades promedios por cada año.
     """
     # IDEM FUNCION ANTERIOR
@@ -298,7 +296,6 @@ def imprimir_grafico_temperaturas(datos_graficos_temperaturas):
     """
     Imprime el grafico de temperaturas promedio por año.
     """
-    # EMPAQUETAN PARA DESPUÉS DESEMPAQUETAR... NO ES QUE ESTÉ MAL PERO PARECE UN POCO INNECESARIO
     lista_años, lista_temperaturas = datos_graficos_temperaturas
 
     años = np.array(lista_años)
@@ -338,7 +335,6 @@ def obtener_temperatura_max(lista_historico):
 
     max_temperatura = 0
     fecha_max_temperatura = ''
-    # TEMPERATURA MAXIMA O MEDIA MAXIMA?
     for dato in lista_historico:
         temperatura = (float(dato['temp_max']) + float(dato['temp_min'])) / 2
         temperatura = round(temperatura, 1)
@@ -578,7 +574,6 @@ def imprimir_menu():
 
 
 def main():
-    # CAMBIAR A CTES?
     URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL"
     URL_PRONOSTICO_EXTENDIDO = "https://ws.smn.gob.ar/map_items/forecast/3"  # URL pronostico extendido a 3 dias
     URL_ESTADO_ACTUAL = "https://ws.smn.gob.ar/map_items/weather"  # URL pronostico de varias ciudades, estado actual
