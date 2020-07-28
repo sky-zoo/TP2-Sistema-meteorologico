@@ -6,8 +6,8 @@ import cv2
 import sys
 
 # PODRÍA HACERSE UNIVERSAL? USAR NOMBRE DEL ARCHIVO
-RUTA_ARCHIVO = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\weatherdata--389-603.csv"
-RUTA_IMAGEN = r"C:\Users\desktop\Documents\FIUBA\Algoritmos I\TP_2\imagenes-radar\COMP_CEN_ZH_CMAX_20200630_215000Z.png"
+ARCHIVO_CSV = "weatherdata--389-603.csv"
+IMAGEN_RADAR = "imagen_radar.png"
 
 
 def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades):  # Para el punto 5
@@ -142,7 +142,7 @@ def leer_archivo_historico():
     
     try:
         # NOMBRE_ARCHIVO
-        with open('weatherdata--389-603.csv') as csvfile:
+        with open(ARCHIVO_CSV) as csvfile:
             archivo = csv.DictReader(csvfile)
             # FALTARÍA QUE SEA A PARTIR DE LOS ULTIMOS 5 AÑOS ASÍ SE ESTÁN GUARDANDO VALORES QUE NO USAN DESPUÉS 
             for dato in archivo:
@@ -427,9 +427,8 @@ def recortar_imagen(imagen, x, y, diametro):
         Devuelve: imagen recortada: una matriz de diámetro x diámetro """
     x -= (diametro // 2)
     y -= (diametro // 2)
-    recorte = imagen[y: y + diametro, x: x + diametro]
 
-    return recorte
+    return imagen[y: y + diametro, x: x + diametro]
           
           
 def crear_mascara(imagen, rango1, rango2=()):
@@ -460,9 +459,7 @@ def porcentaje_color(imagen, cantidad_pixeles):
     mascara_tormentas = crear_mascara(imagen, rango_color1, rango_color2)
     total_pixeles = cv2.countNonZero(mascara_tormentas)
 
-    porcentaje = round((cantidad_pixeles * 100) / total_pixeles, 2)
-
-    return porcentaje
+    return round((cantidad_pixeles * 100) / total_pixeles, 2)
           
           
 def buscar_color(imagen, colores):
@@ -532,6 +529,24 @@ def identificar_alerta(imagen, colores, diametro):
         print("----", mensaje, "----\n")
 
 
+def analisis_imagen(coor_ciudad, rango_colores, diametro_radar):
+    """ Ejecución del analisis de imagen: muestra menu de ciudades, lee la imagen la analiza e imprime la alerta
+        Parametros: Diccionario con las coordenadas en pixeles de las ciudades con radares, diccionario con los
+            rangos de colores de alertas en formato HSV y entero con el diámetro del radar de cada ciudad. """
+    print("\n---------- Análisis de imagen ----------")
+    seguir = "s"
+    while seguir != "n":
+        ciudad = menu_ciudades()
+        try:
+            radar = cv2.imread(IMAGEN_RADAR)
+            recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
+            identificar_alerta(recorte, rango_colores, diametro_radar)
+            seguir = input("¿Desea ver datos de otra ciudad? (s/n): ").lower()
+        except TypeError:
+            print("---Error al leer la imagen, compruebe que la imagen se encuentra en la misma carpeta.---\n")
+            seguir = "n"
+
+
 def imprimir_menu_csv():
     """
     Imprime el menu para el archivo histórico.
@@ -584,7 +599,8 @@ def main():
     coor_ciudad = {"neuquen": (236, 439), "bahia blanca": (426, 430), "santa rosa": (369, 338),
                    "mar del plata": (578, 402), "caba": (555, 264), "pergamino": (482, 232),
                    "santa fe": (484, 139), "cordoba": (360, 129)}
-   
+
+    # rango de colores separados por tipo de alertas en formato HSV [matiz, saturacion, brillo]
     rango_colores = {"celeste-verde": (np.array([33, 100, 20]), np.array([102, 255, 255])),
                      "amarillo-naranja": (np.array([16, 50, 25]), np.array([32, 255, 255])),
                      "rojo1": (np.array([0, 100, 100]), np.array([15, 255, 255])),
@@ -655,18 +671,7 @@ def main():
             menu_csv()
 
         elif opcion_menu == "5":
-            print("\n---------- Análisis de imagen ----------")
-            seguir = "s"
-            while seguir != "n":
-                ciudad = menu_ciudades()
-                try:
-                    radar = cv2.imread('imagen_radar.png')
-                    recorte = recortar_imagen(radar, coor_ciudad[ciudad][0], coor_ciudad[ciudad][1], diametro_radar)
-                    identificar_alerta(recorte, rango_colores, diametro_radar)
-                    seguir = input("¿Desea ver datos de otra ciudad? (s/n): ").lower()
-                except TypeError:
-                    print("---Error al leer la imagen, compruebe que la ruta lleve al archivo---\n")
-                    seguir = "n"
+            analisis_imagen(coor_ciudad, rango_colores, diametro_radar)
 
           
 main()
