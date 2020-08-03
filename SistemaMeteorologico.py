@@ -30,24 +30,23 @@ def obtener_url(url): # Para el punto 3
         informacion = requests.get(url).json()
     except ConnectionError as e:
         print(f"Error: {e} ")
+        informacion = dict()
+        return dict()
     return informacion
 
 
 def obtener_alertas_en_localizacion_ingresada(provincia, alertas): # Para el punto 2
     """
         Obtiene las alertas en una localizacion ingresada por el usuario.
-        Precondicion: debe ingresarse una lista con los datos del usuario, la clave que se utiliza del JSON es 'state', que esta dentro de la clave 'address'.
+        Precondicion: debe ingresarse una lista con los datos del usuario, la clave que se utiliza del JSON es 'state', que esta dentro de la clave 'address' y un JSON con alertas nacionales.
         Postcondicion: si se encuentra la ciudad, devuelve una lista con todas sus alertas. Si no se encuentra la ciudad devuelve una lista vacia.
     """
-    # localizacion_no_existe = True
     alertas_ciudad = []
-    # while localizacion_no_existe:
     for ciudad in range(len(alertas)):
         for zona in range(len(alertas[ciudad]['zones'])):
             if provincia['address']['state'].replace(" Province", "") in alertas[ciudad]['zones'][str(zona)]:
                 alertas_ciudad.append(alertas[ciudad]['description'])
                 return alertas_ciudad
-        # localizacion_no_existe = False
     return alertas_ciudad
 
 def obtener_localizacion_usuario(token, coordenadas):
@@ -95,34 +94,62 @@ def mostrar_alertas_nacionales(alertas_nacionales_json): # Este es para el punto
         print(f"Fecha: {alertas_nacionales_json[numero_alerta]['date']}\nA la hora: {alertas_nacionales_json[numero_alerta]['hour']}\n")
         print(f"Descripcion: {alertas_nacionales_json[numero_alerta]['description']}\n")
         print(f"Actualizacion: {alertas_nacionales_json[numero_alerta]['update']}\n")
-        input("Presione enter para continuar.")
 
 def mostrar_pronostico_en_ciudad_ingresada(pronostico_ciudad_json, alertas): # Para el punto 5
     """
-        Muestra al usuario el pronostico extendido a 3 dias en la ciudad que ingresó.
+        Muestra al usuario el pronostico extendido a 3 dias en la ciudad que ingresó y si hay alertas, las muestra.
         Precondicion: se debe ingresar una lista con dos espacios, el primer espacio es la latitud y
-        la segunda, la longitud.
+        la segunda, la longitud. Tambien debe ingresarse un JSON con alertas nacionales.
     """
+    provincia_ingresada = pronostico_ciudad_json['province'].split(",")[0]
+
     print("-" * 40 + "PRONOSTICO EXTENDIDO" + "-" * 40)
     print(f"Pronostico extendido a 3 dias para {pronostico_ciudad_json['name']}, {pronostico_ciudad_json['province']} ")
     print(f"Temperatura por la mañana: {pronostico_ciudad_json['weather']['morning_temp']}ºC", end=", ")
     print(f"temperatura por la tarde: {pronostico_ciudad_json['weather']['afternoon_temp']}ºC\n")
     print(f"Descripcion por la mañana: {pronostico_ciudad_json['weather']['morning_desc']}")
-    print(f"Descripcion por la tarde: {pronostico_ciudad_json['weather']['afternoon_desc']}")
+    print(f"Descripcion por la tarde: {pronostico_ciudad_json['weather']['afternoon_desc']}\n")
+
     for alerta in range(len(alertas)):
         for zona in range(len(alertas[alerta]['zones'])):
-            if pronostico_ciudad_json['province'] in alertas[alerta]['zones'][str(zona)]:
+            if provincia_ingresada in alertas[alerta]['zones'][str(zona)]:
                 print("-" * 40 + "ALERTAS" + "-" * 40)
-                print(f"Alerta Nº{alerta+1} en {pronostico_ciudad_json['province']}: {alertas[alerta]['description']}\n")
-
+                print(f"Alerta Nº{alerta+1} en {provincia_ingresada}: {alertas[alerta]['description']}\n")
+                     
 def mostrar_alertas_en_localizacion(alertas, datos_usuario): # Para el punto 2
     """
-        Muestra al usuario el estado actual del pronostico en la localizacion que ingresó.
+        Muestra al usuario las alertas en la localizacion que ingresó.
         Precondicion: debe ingresarse dos objetos JSON, el primer parametro debe ser una lista con alertas en una ciudad, y el segundo parametro, un JSON con datos de localizacion del usuario.
     """
     print("-" * 40 + "ALERTAS" + "-"*40)
-    for numero_alerta in range(len(alertas)):
-        print(f"Alerta Nº{numero_alerta+1} en {datos_usuario['address']['state']}: {alertas[numero_alerta]}\n")
+    if len(alertas) > 0:
+        for numero_alerta in alertas:
+            print(f"Alerta Nº{numero_alerta+1} en {datos_usuario['address']['state']}: {alertas}\n")
+    else:
+        print(f"No hay alertas en {datos_usuario['address']['state']}\n")
+
+def verificar_y_obtener_pais(TOKEN):
+    """
+        Pide al usuario latitud y longitud y verifica que las coordenadas ingresadas por el usuario sea Argentina y que sean validas.
+        Precondicion: debe ingresarse un TOKEN para utilizar la API de locationIQ y una lista con 2 indices, el primer indice debe ser la latitud, el segundo la longitud.
+        Postcondicion: devuelve un diccionario con los datos de la ubicacion ingresada.
+    """
+    # while (len(lat_lon) != 2) or lat_lon[0].isalpha() or lat_lon[1].isalpha() or (lat_lon[0] == "") or (lat_lon[1] == "") or (float(lat_lon[0]) <= -90 or float(lat_lon[0]) >= 90) and (float(lat_lon[1]) <= -180 or float(lat_lon[1]) >= 80):
+    #     lat_lon = input("Introduzca una latitud y longitud valida(separados por coma): ").split(",")
+    # datos_localizacion_usuario = obtener_localizacion_usuario(TOKEN, lat_lon)
+    
+    lat_lon = input("Introduzca su latitud y longitud(separados por coma): ").split(",")
+    while len(lat_lon) != 2 or lat_lon[0].isalpha() or lat_lon[1].isalpha():
+        lat_lon = input("Introduzca una latitud y longitud valida(separados por coma): ").split(",")
+
+    datos_usuario = obtener_localizacion_usuario(TOKEN,lat_lon)
+    while 'error' in datos_usuario or datos_usuario['address']['country_code'] != "ar" or len(lat_lon) != 2 or lat_lon[0].isalpha() or lat_lon[1].isalpha() or (float(lat_lon[0]) <= -90 or float(lat_lon[0]) >= 90) or (float(lat_lon[1]) <= -180 or float(lat_lon[1]) >= 80):
+        lat_lon = input("Introduzca una latitud y longitud valida y dentro de Argentina(separados por coma, latitud entre -90 y 90, longitud entre -180 y 80): ").split(",")
+        if len(lat_lon) == 2:
+            datos_usuario = obtener_localizacion_usuario(TOKEN, lat_lon)
+
+    return datos_usuario
+
 
 def main():
     TOKEN = "8a245ccf3615f5"
@@ -135,8 +162,8 @@ def main():
     alertas_nacionales = obtener_url(URL_ALERTAS_NACIONALES)
 
     # CREAR UNA VARIABLE QUE ALMACENE EL VALOR DE LA LOCALIZACION ACTUAL DEL USUARIO 
-    lat_lon = input("Introduzca su latitud y longitud(separados por coma): ").split(",")
-    datos_localizacion_usuario = obtener_localizacion_usuario(TOKEN, lat_lon)
+
+    datos_localizacion_usuario = verificar_y_obtener_pais(TOKEN)
 
     opcion = "0"
     while opcion != "6":
@@ -150,10 +177,9 @@ def main():
 
             if opcion == "a":
                 # ACA USARIA OTRA VARIABLE QUE ALMACENE LA LOCALIZACION INGRESADA POR EL USUARIO
-                lat_lon = input("Introduzca latitud y longitud, separados por coma: ").split(",")
-                datos_localizacion_usuario = obtener_localizacion_usuario(TOKEN, lat_lon)
-                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(datos_localizacion_usuario, alertas_nacionales)
-                mostrar_alertas_en_localizacion(alertas_en_localizacion, datos_localizacion_usuario)
+                localizacion_ingresada = verificar_y_obtener_pais(TOKEN)
+                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(localizacion_ingresada, alertas_nacionales)
+                mostrar_alertas_en_localizacion(alertas_en_localizacion, localizacion_ingresada)
 
             elif opcion == "b":
                 #  ACA USARIA LA VARIABLE DE LA LOCALIZACION ACTUAL
@@ -172,11 +198,10 @@ def main():
                 ciudad_ingresada = input("No se encuentra la ciudad. Intentelo nuevamente: ").lower()
                 datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
             mostrar_pronostico_en_ciudad_ingresada(datos_ciudad, alertas_nacionales)
-            # mostrar_alertas_en_localizacion(alertas_nacionales, datos_ciudad)
-            #mostrar alertas en la zona del usuario tmb
+            
 
         elif opcion == "4":
-            menu_csv()
+            print("Historico csv")
         elif opcion == "5":
             print("Análisis de imagen")
 
