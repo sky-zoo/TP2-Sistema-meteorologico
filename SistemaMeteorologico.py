@@ -27,12 +27,12 @@ def obtener_url(url): # Para el punto 3
     # return requests.get(url).json()
 
     try:
-        informacion = requests.get(url).json()
+        informacion = requests.get(url)
     except ConnectionError as e:
         print(f"Error: {e} ")
         informacion = dict()
-        return dict()
-    return informacion
+        return informacion
+    return informacion.json()
 
 
 def obtener_alertas_en_localizacion_ingresada(provincia, alertas): # Para el punto 2
@@ -154,12 +154,13 @@ def verificar_y_obtener_pais(TOKEN):
 def main():
     TOKEN = "8a245ccf3615f5"
 
-    URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL" # URL para el punto 3
+    URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/A" # URL para el punto 3
     URL_PRONOSTICO_EXTENDIDO = "https://ws.smn.gob.ar/map_items/forecast/3" # URL pronostico extendido a 3 dias
     URL_ESTADO_ACTUAL = "https://ws.smn.gob.ar/map_items/weather" # URL pronostico de varias ciudades, estado actual
 
     pronosticos = obtener_url(URL_ESTADO_ACTUAL)
     alertas_nacionales = obtener_url(URL_ALERTAS_NACIONALES)
+    print(alertas_nacionales)
 
     # CREAR UNA VARIABLE QUE ALMACENE EL VALOR DE LA LOCALIZACION ACTUAL DEL USUARIO 
 
@@ -167,6 +168,7 @@ def main():
 
     opcion = "0"
     while opcion != "6":
+        
         opcion = input("1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico extendido\n4. Datos históricos\n5. Tormetas por radar\n6. Salir\nOpcion: ")
         while opcion.isnumeric() is False or int(opcion) <= 0 or int(opcion) > 6:
             opcion = input("Ingrese un número del menú: ")
