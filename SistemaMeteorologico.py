@@ -32,6 +32,9 @@ def obtener_url(url): # Para el punto 3
         print(f"Error: {e} ")
         informacion = dict()
         return informacion
+    if "Cannot GET" in informacion.text or "ERROR" in informacion.text:
+        informacion = dict()
+        return informacion
     return informacion.json()
 
 
@@ -114,7 +117,7 @@ def mostrar_pronostico_en_ciudad_ingresada(pronostico_ciudad_json, alertas): # P
         for zona in range(len(alertas[alerta]['zones'])):
             if provincia_ingresada in alertas[alerta]['zones'][str(zona)]:
                 print("-" * 40 + "ALERTAS" + "-" * 40)
-                print(f"Alerta Nº{alerta+1} en {provincia_ingresada}: {alertas[alerta]['description']}\n")
+                print(f"Alerta Nº{alerta+1}, ubicado en {provincia_ingresada}: {alertas[alerta]['description']}\n")
                      
 def mostrar_alertas_en_localizacion(alertas, datos_usuario): # Para el punto 2
     """
@@ -123,8 +126,8 @@ def mostrar_alertas_en_localizacion(alertas, datos_usuario): # Para el punto 2
     """
     print("-" * 40 + "ALERTAS" + "-"*40)
     if len(alertas) > 0:
-        for numero_alerta in alertas:
-            print(f"Alerta Nº{numero_alerta+1} en {datos_usuario['address']['state']}: {alertas}\n")
+        for numero_alerta in range(len(alertas)):
+            print(f"Alerta Nº{numero_alerta+1} en {datos_usuario['address']['state']}: {alertas[numero_alerta]}\n")
     else:
         print(f"No hay alertas en {datos_usuario['address']['state']}\n")
 
@@ -154,13 +157,13 @@ def verificar_y_obtener_pais(TOKEN):
 def main():
     TOKEN = "8a245ccf3615f5"
 
-    URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/A" # URL para el punto 3
+    URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL" # URL para el punto 3
     URL_PRONOSTICO_EXTENDIDO = "https://ws.smn.gob.ar/map_items/forecast/3" # URL pronostico extendido a 3 dias
     URL_ESTADO_ACTUAL = "https://ws.smn.gob.ar/map_items/weather" # URL pronostico de varias ciudades, estado actual
 
-    pronosticos = obtener_url(URL_ESTADO_ACTUAL)
+    # pronosticos = obtener_url(URL_ESTADO_ACTUAL)
     alertas_nacionales = obtener_url(URL_ALERTAS_NACIONALES)
-    print(alertas_nacionales)
+    pronostico_extendido = obtener_url(URL_PRONOSTICO_EXTENDIDO)
 
     # CREAR UNA VARIABLE QUE ALMACENE EL VALOR DE LA LOCALIZACION ACTUAL DEL USUARIO 
 
@@ -168,12 +171,13 @@ def main():
 
     opcion = "0"
     while opcion != "6":
-        
+
         opcion = input("1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico extendido\n4. Datos históricos\n5. Tormetas por radar\n6. Salir\nOpcion: ")
         while opcion.isnumeric() is False or int(opcion) <= 0 or int(opcion) > 6:
             opcion = input("Ingrese un número del menú: ")
-
-        if opcion == "1":
+        if alertas_nacionales == {}:
+            print("Error al obtener las alertas nacionales. Las opciones 1, 2, y 3 no estan disponibles")
+        if opcion == "1" :
             print("a)Alertas en geolocalizacion ingresada\nb)Alertas en geolocalizacion actual")
             opcion = input("Opcion: ")
 
@@ -187,18 +191,16 @@ def main():
                 #  ACA USARIA LA VARIABLE DE LA LOCALIZACION ACTUAL
                 alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(datos_localizacion_usuario, alertas_nacionales)
                 mostrar_alertas_en_localizacion(alertas_en_localizacion, datos_localizacion_usuario)
-
-        elif opcion == "2":
+        
+        elif opcion == "2" and alertas_nacionales != {}:
             mostrar_alertas_nacionales(alertas_nacionales)
-
-        elif opcion == "3":
+        elif opcion == "3" and alertas_nacionales != {}:
             ciudad_ingresada = input("Ingrese una ciudad: ").lower()
-            pronosticos = obtener_url(URL_PRONOSTICO_EXTENDIDO)
-            datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
+            datos_ciudad = buscar_ciudad(ciudad_ingresada, pronostico_extendido)
 
             while datos_ciudad == {}:
                 ciudad_ingresada = input("No se encuentra la ciudad. Intentelo nuevamente: ").lower()
-                datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
+                datos_ciudad = buscar_ciudad(ciudad_ingresada, pronostico_extendido)
             mostrar_pronostico_en_ciudad_ingresada(datos_ciudad, alertas_nacionales)
             
 
