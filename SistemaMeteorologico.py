@@ -5,83 +5,72 @@ import requests
 import cv2
 import sys
 
-# PODRÍA HACERSE UNIVERSAL? USAR NOMBRE DEL ARCHIVO
 ARCHIVO_CSV = "weatherdata--389-603.csv"
 IMAGEN_RADAR = "imagen_radar.png"
 
 
-def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades):  # Para el punto 5
+def buscar_ciudad(ciudad_ingresada, pronosticos_ciudades): # Para el punto 5
     """
         Busca una ciudad dentro de pronosticos_ciudades.
         Precondicion: debe ingresarse una ciudad para buscar, y debe ingresarse como segundo parametro
         un objeto JSON que contenga el pronostico a 3 dias de varias ciudades.
         Postcondicion: devuelve un diccionario con los datos de la ciudad ingresada. Si no se encuentra la ciudad devuelve un diccionario vacio.
     """
-    # MISMAS CORRECCIONES QUE PARA OBTENER_COORDENADAS
-    ciudad_no_existe = True
     datos_ciudad = {}
-    while ciudad_no_existe:
-        for ciudad in range(len(pronosticos_ciudades)):
-            if ciudad_ingresada == pronosticos_ciudades[ciudad]['name'].lower():
-                datos_ciudad = pronosticos_ciudades[ciudad]
-        ciudad_no_existe = False
-
+    for ciudad in range(len(pronosticos_ciudades)):
+        if ciudad_ingresada == pronosticos_ciudades[ciudad]['name'].lower():
+            datos_ciudad = pronosticos_ciudades[ciudad]
+            return datos_ciudad
     return datos_ciudad
 
-# AGREGAR TCO
-def obtener_url(url):  # Para el punto 3
+def obtener_url(url): # Para el punto 3
     """
         Obtiene informacion de la url ingresada.
         Precondicion: se debe ingresar una url.
-        Postcondicion: devuelve un objeto JSON.
+        Postcondicion: devuelve un objeto JSON si se pudo obtener la informacion de la url. De lo contrario devuelve un diccionario vacio.
     """
-    return requests.get(url).json()
+    try:
+        informacion = requests.get(url)
+    except Exception as e:
+        print(f"Error de conexion: {e} ")
+        informacion = dict()
+        return informacion
+    if "Cannot GET" in informacion.text or "ERROR" in informacion.text:
+        informacion = dict()
+        return informacion
+    return informacion.json()
 
 
-def obtener_alertas_en_localizacion_ingresada(coordenadas, pronostico_ciudades_json):  # Para el punto 2
+def obtener_alertas_en_localizacion_ingresada(provincia, alertas): # Para el punto 2
     """
         Obtiene las alertas en una localizacion ingresada por el usuario.
-        Precondicion: debe ingresarse una lista con las coordenadas, siendo el primer indice la latitud y el segundo indice la longitud.
-        Postcondicion: si se encuentra la ciudad, devuelve la ciudad con todas sus alertas. Si no se encuentra la ciudad devuelve -1.
+        Precondicion: debe ingresarse una lista con los datos del usuario, la clave que se utiliza del JSON es 'state', que esta dentro de la clave 'address' y un JSON con alertas nacionales.
+        Postcondicion: si se encuentra la ciudad, devuelve una lista con todas sus alertas. Si no se encuentra la ciudad devuelve una lista vacia.
     """
-    # ACTUALIZAR POST
-
-    localizacion_no_existe = True
-    # IDEM WHILE EN OBTENER_COORDENADAS
-    while localizacion_no_existe:
-        for ciudad in range(len(pronostico_ciudades_json)):
-            # SI LA CANTIDAD DE NUMEROS NO ES EXACTA NO VA A COINCIDIR
-            if coordenadas[0] == pronostico_ciudades_json[ciudad]['lat'] and coordenadas[1] == pronostico_ciudades_json[ciudad]['lon']:
-                alertas_ciudad = pronostico_ciudades_json[ciudad]
-        localizacion_no_existe = False
-
+    alertas_ciudad = []
+    for ciudad in range(len(alertas)):
+        for zona in range(len(alertas[ciudad]['zones'])):
+            if provincia['address']['state'].replace(" Province", "") in alertas[ciudad]['zones'][str(zona)]:
+                alertas_ciudad.append(alertas[ciudad]['description'])
+                return alertas_ciudad
     return alertas_ciudad
 
-
-def obtener_coordenadas(ciudad_ingresada, pronostico_ciudades_json):
+def obtener_localizacion_usuario(token, coordenadas):
     """
-        Obtiene las coordenadas del usuario dependiendo de la ciudad que escriba.
-        Precondicion: debe ingresarse un string, la cual tiene que indicar el nombre de la ciudad en la que esta el usuario.
-        y un objeto JSON que contenga la informacion del clima de varias ciudades.
-        Postcondicion: devuelve las coordenadas en forma de lista, asi: [latitud, longitud]
-    """# O [0,0] SI LA CIUDAD NO FUE ENCONTRADA
-    ciudad_no_encontrada = True
-    coordenadas = [0, 0]
-    # WHILE INNECESARIO 
-    while ciudad_no_encontrada:
-        for ciudad in range(len(pronostico_ciudades_json)):
-            if ciudad_ingresada.lower() == pronostico_ciudades_json[ciudad]['name'].lower():
-                coordenadas[0] = pronostico_ciudades_json[ciudad]['lat']
-                coordenadas[1] = pronostico_ciudades_json[ciudad]['lon']                               
-                # CORTAR CICLO CON UN RETURN P/ EVITAR ITERACIONES INNECESARIAS
-        ciudad_no_encontrada = False
-    return coordenadas
+        Obtiene la ubicacion del usuario.
+        Precondicion: debe ingresarse una token de locationIQ y una lista, donde el primer indice indica la latitud y el segundo la longitud.
+        Postcondicion: devuelve un diccionario con los datos de la ubicacion del usuario.
+    """
+    URL = f"https://us1.locationiq.com/v1/reverse.php?key={token}&lat={coordenadas[0]}&lon={coordenadas[1]}&format=json"
+    datos_coordenadas = obtener_url(URL)
+    
+    return datos_coordenadas
 
 
-def mostrar_alertas_nacionales(alertas_nacionales_json):  # Este es para el punto 3
+def mostrar_alertas_nacionales(alertas_nacionales_json): # Este es para el punto 3
     """
         Muestra en consola todas las alertas nacionales.
-        Precondicion: debe ingresarse un objeto JSON con las alertas nacionales.
+        Precondicion: debe ingresarse un diccionario con las alertas nacionales.
     """
     for numero_alerta in range(len(alertas_nacionales_json)):
         print("-" * 80)
@@ -90,48 +79,64 @@ def mostrar_alertas_nacionales(alertas_nacionales_json):  # Este es para el punt
         for zonas in alertas_nacionales_json[numero_alerta]['zones'].values():
             print(f"{zonas}", end=". ")
         print("\n")
-        print(
-            f"Titulo: {alertas_nacionales_json[numero_alerta]['title']}\nEstado: {alertas_nacionales_json[numero_alerta]['status']}\n")
-        print(
-            f"Fecha: {alertas_nacionales_json[numero_alerta]['date']}\nA la hora: {alertas_nacionales_json[numero_alerta]['hour']}\n")
+        print(f"Titulo: {alertas_nacionales_json[numero_alerta]['title']}\nEstado: {alertas_nacionales_json[numero_alerta]['status']}\n")
+        print(f"Fecha: {alertas_nacionales_json[numero_alerta]['date']}\nA la hora: {alertas_nacionales_json[numero_alerta]['hour']}\n")
         print(f"Descripcion: {alertas_nacionales_json[numero_alerta]['description']}\n")
         print(f"Actualizacion: {alertas_nacionales_json[numero_alerta]['update']}\n")
-        input("Presione enter para continuar.") # LO SACARÍA
 
 
-def mostrar_pronostico_en_ciudad_ingresada(pronostico_ciudad_json):  # Para el punto 5
+def mostrar_pronostico_en_ciudad_ingresada(pronostico_ciudad_json, alertas): # Para el punto 5
     """
-        Muestra al usuario el pronostico extendido a 3 dias en la ciudad que ingresó.
+        Muestra al usuario el pronostico extendido a 3 dias en la ciudad que ingresó y si hay alertas, las muestra.
         Precondicion: se debe ingresar una lista con dos espacios, el primer espacio es la latitud y
-        la segunda, la longitud.
+        la segunda, la longitud. Tambien debe ingresarse un JSON con alertas nacionales.
     """
-    print("-" * 80)
+    provincia_ingresada = pronostico_ciudad_json['province'].split(",")[0]
+
+    print("-" * 40 + "PRONOSTICO EXTENDIDO" + "-" * 40)
     print(f"Pronostico extendido a 3 dias para {pronostico_ciudad_json['name']}, {pronostico_ciudad_json['province']} ")
     print(f"Temperatura por la mañana: {pronostico_ciudad_json['weather']['morning_temp']}ºC", end=", ")
     print(f"temperatura por la tarde: {pronostico_ciudad_json['weather']['afternoon_temp']}ºC\n")
     print(f"Descripcion por la mañana: {pronostico_ciudad_json['weather']['morning_desc']}")
-    print(f"Descripcion por la tarde: {pronostico_ciudad_json['weather']['afternoon_desc']}")
-    input("Presione enter para continuar.\n") # LO SACARÍA
+    print(f"Descripcion por la tarde: {pronostico_ciudad_json['weather']['afternoon_desc']}\n")
+
+    for alerta in range(len(alertas)):
+        for zona in range(len(alertas[alerta]['zones'])):
+            if provincia_ingresada in alertas[alerta]['zones'][str(zona)]:
+                print("-" * 40 + "ALERTAS" + "-" * 40)
+                print(f"Alerta Nº{alerta+1}, ubicado en {provincia_ingresada}: {alertas[alerta]['description']}\n")
 
 
-def mostrar_alertas_en_localizacion(pronostico_ciudad_json):  # Para el punto 2
+def mostrar_alertas_en_localizacion(alertas, datos_usuario): # Para el punto 2
     """
-        Muestra al usuario el estado actual del pronostico en la localizacion que ingresó.
-        Precondicion: debe ingresarse un objeto JSON con el pronostico actual de la ciudad que se haya ingresado.
+        Muestra al usuario las alertas en la localizacion que ingresó.
+        Precondicion: debe ingresarse dos objetos JSON, el primer parametro debe ser una lista con alertas en una ciudad, y el segundo parametro, un JSON con datos de localizacion del usuario.
     """
-    print("-" * 80)
-    print(f"Estado actual para {pronostico_ciudad_json['name']}({pronostico_ciudad_json['province']})\n")
-    print(
-        f"Temperatura: {pronostico_ciudad_json['weather']['temp']}ºC | Humedad: {pronostico_ciudad_json['weather']['humidity']}%",
-        end=" | ")
-    print(
-        f"Presion: {pronostico_ciudad_json['weather']['pressure']} hPa | Visibilidad: {pronostico_ciudad_json['weather']['visibility']} km",
-        end=" | ")
-    print(
-        f"Velocidad del viento: {pronostico_ciudad_json['weather']['wind_speed']} km/h | Direccion del viento: {pronostico_ciudad_json['weather']['wing_deg']} ")
-    print(f"Descripcion: {pronostico_ciudad_json['weather']['description']}\n")
-    input("Presione enter para continuar.") # LO SACARÍA
+    print("-" * 40 + "ALERTAS" + "-"*40)
+    if len(alertas) > 0:
+        for numero_alerta in range(len(alertas)):
+            print(f"Alerta Nº{numero_alerta+1} en {datos_usuario['address']['state']}: {alertas[numero_alerta]}\n")
+    else:
+        print(f"No hay alertas en {datos_usuario['address']['state']}\n")
 
+def verificar_y_obtener_pais(TOKEN):
+    """
+        Pide al usuario latitud y longitud y verifica que las coordenadas ingresadas por el usuario sea Argentina y que sean validas.
+        Precondicion: debe ingresarse un TOKEN para utilizar la API de locationIQ y una lista con 2 indices, el primer indice debe ser la latitud, el segundo la longitud.
+        Postcondicion: devuelve un diccionario con los datos de la ubicacion ingresada.
+    """
+
+    lat_lon = input("Introduzca su latitud y longitud(separados por coma): ").split(",")
+    while len(lat_lon) != 2 or lat_lon[0].isalpha() or lat_lon[1].isalpha():
+        lat_lon = input("Introduzca una latitud y longitud valida(separados por coma): ").split(",")
+
+    datos_usuario = obtener_localizacion_usuario(TOKEN,lat_lon)
+    while 'error' in datos_usuario or datos_usuario['address']['country_code'] != "ar" or len(lat_lon) != 2 or lat_lon[0].isalpha() or lat_lon[1].isalpha() or (float(lat_lon[0]) <= -90 or float(lat_lon[0]) >= 90) or (float(lat_lon[1]) <= -180 or float(lat_lon[1]) >= 80):
+        lat_lon = input("Introduzca una latitud y longitud valida y dentro de Argentina(separados por coma, latitud entre -90 y 90, longitud entre -180 y 80): ").split(",")
+        if len(lat_lon) == 2:
+            datos_usuario = obtener_localizacion_usuario(TOKEN, lat_lon)
+
+    return datos_usuario
 
 def leer_archivo_historico():
     """
@@ -141,12 +146,9 @@ def leer_archivo_historico():
     lista_historico = []
     
     try:
-        # NOMBRE_ARCHIVO
         with open(ARCHIVO_CSV) as csvfile:
             archivo = csv.DictReader(csvfile)
-            # FALTARÍA QUE SEA A PARTIR DE LOS ULTIMOS 5 AÑOS ASÍ SE ESTÁN GUARDANDO VALORES QUE NO USAN DESPUÉS 
             for dato in archivo:
-                # PARA QUÉ CREAR OTRO DICC SI EL METODO DictReader YA LES DEVUELVE UNO?
                 reg = {"fecha": dato['Date'], "temp_max": dato['Max Temperature'], "temp_min": dato['Min Temperature'], "precipitacion": dato['Precipitation'], "humedad_relativa": dato['Relative Humidity']}
 
                 lista_historico.append(reg)
@@ -155,7 +157,7 @@ def leer_archivo_historico():
 
     except Exception as error:
         print("Error:", error)
-        sys.exit() # NO USAR sys.exit()
+        sys.exit() 
 
 
 def obtener_lista_año_temperatura(lista_historico):
@@ -163,24 +165,20 @@ def obtener_lista_año_temperatura(lista_historico):
     Precondición: Obtiene temperatura promedio (promedio de temp máx y temp min) por cada registro. Recibe la lista del archivo historico.
     Postcondición: Retorna lista con los datos año y temperatura promedio.
     """
-    # Obtiene temperatura promedio por cada fecha del archivo. y los guarda en una lista con su año correspondiente.
 
     lista_año_temperatura = []
     for dato in lista_historico:
-        # PUEDEN AHORRARSE UNA VARIABLE
         fecha_temperatura = dato['fecha']
         año_temperatura = fecha_temperatura[-4::]
 
         temperatura = (float(dato['temp_max']) + float(dato['temp_min'])) / 2
         temperatura = round(temperatura, 1)
-        # PODRÍA SER (año_temperatura, temperatura), NO APLICA MUCHO EL DIC ACÁ
         reg_año_temperatura = {"año": año_temperatura, "temperatura": temperatura}
 
         lista_año_temperatura.append(reg_año_temperatura)
 
     return lista_año_temperatura
 
-# NO USAR Ñ EN EL CODIGO
 def obtener_lista_año_humedad(lista_historico):
     """
     Precondición: Obtiene porcentaje promedio de humedad por cada registro. Recibe la lista del archivo historico.
@@ -205,7 +203,6 @@ def obtener_listas_años_temperaturas(lista_año_temperatura):
     Precondición: Obtiene temperatura promedio (temperatura promedio del año). Recibe lista de datos año, temperatura.
     Postcondición: Retorna dos listas, una con los años y otra con las temperaturas promedios por cada año.
     """
-    # NO INICIALICEN VARIABLES VACIAS A MENOS QUE SEA NECESARIO
     año_anterior = ''
 
     acum_temperatura = 0
@@ -229,18 +226,18 @@ def obtener_listas_años_temperaturas(lista_año_temperatura):
     promedio_año_temperatura = round(acum_temperatura / cont_temperatura)
     lista_años.append(año_anterior)
     lista_temperaturas.append(promedio_año_temperatura)
-    año_anterior = lista_año_temperatura[i]['año'] # ESTO CREO QUE FALTÓ BORRARLO
+    año_anterior = lista_año_temperatura[i]['año'] 
 
     return lista_años, lista_temperaturas
 
 
 def obtener_listas_años_humedades(lista_año_humedad):
-    # PRE
+    
     """
     Precondición: Obtiene humedad promedio (promedio del año). Recibe lista de datos año, humedad La lista debe estar formada con el siguiente formato [año, humedad].
     Postcondición: Retorna dos listas, una con los años y otra con las humedades promedios por cada año.
     """
-    # IDEM FUNCION ANTERIOR
+    
     año_anterior = ''
     acum_humedad = 0
     cont_humedad = 0
@@ -370,7 +367,7 @@ def grafico_temperaturas():
     """
     Lee el archivo histórico, obtiene los datos necesarios para graficar e imprime el gráfico de temperaturas.
     """
-    # PODRÍAN LEER EL ARCHIVO HISTORICO SOLO UNA VEZ SI LO PONEN EN MENÚ Y DESPUÉS LO PASAN POR PARÁMETRO
+    
     arch_historico = leer_archivo_historico()
     datos_grafico_temperaturas = obtener_datos_grafico_temperaturas(arch_historico)
     imprimir_grafico_temperaturas(datos_grafico_temperaturas)
@@ -589,9 +586,19 @@ def imprimir_menu():
 
 
 def main():
+    TOKEN = "8a245ccf3615f5"
+
     URL_ALERTAS_NACIONALES = "https://ws.smn.gob.ar/alerts/type/AL"
     URL_PRONOSTICO_EXTENDIDO = "https://ws.smn.gob.ar/map_items/forecast/3"  # URL pronostico extendido a 3 dias
-    URL_ESTADO_ACTUAL = "https://ws.smn.gob.ar/map_items/weather"  # URL pronostico de varias ciudades, estado actual
+    
+    alertas_nacionales = obtener_url(URL_ALERTAS_NACIONALES)
+    pronostico_extendido = obtener_url(URL_PRONOSTICO_EXTENDIDO)
+
+    if alertas_nacionales != {} or pronostico_extendido != {}:
+        datos_localizacion_usuario = verificar_y_obtener_pais(TOKEN)
+    if alertas_nacionales == {}:
+            print("-"*30 + "ERROR" + "-"*30)
+            print("Error al obtener las alertas nacionales. Las opciones 1, 2, y 3 no estan disponibles\n")
 
     diametro_radar = 160
 
@@ -606,15 +613,6 @@ def main():
                      "rojo1": (np.array([0, 100, 100]), np.array([15, 255, 255])),
                      "rojo2": (np.array([161, 75, 20]), np.array([179, 255, 255])),
                      "magenta": (np.array([130, 50, 20]), np.array([160, 255, 255]))}
-    
-    pronosticos_actual = obtener_url(URL_ESTADO_ACTUAL) # *
-
-    ciudad_usuario = input("Introduzca la ciudad donde se encuentra: ")
-    coordenadas = obtener_coordenadas(ciudad_usuario, pronosticos_actual)
-    # AL NO SER UN CICLO WHILE SE REPITE SOLO 1 VEZ Y PUEDEN QUEDAR COORDENADAS = [0,0]
-    if coordenadas == [0, 0]:
-        ciudad_usuario = input("Por favor ingrese una ciudad valida: ")
-        coordenadas = obtener_coordenadas(ciudad_usuario, pronosticos_actual)
 
     opcion_menu = "0"
 
@@ -624,48 +622,31 @@ def main():
         while opcion_menu.isnumeric() is False or int(opcion_menu) <= 0 or int(opcion_menu) > 6:
             opcion_menu = input("Por favor, ingrese un número válido: ")
 
-        if opcion_menu == "1":
-            print("---------- Alertas por geolocalización ----------")
+        if opcion_menu == "1" and alertas_nacionales != {}:
             print("a)Alertas en geolocalizacion ingresada\nb)Alertas en geolocalizacion actual")
-            opcion = input("Opcion: ")
+            opcion_menu = input("Opcion: ").lower()
 
-            if opcion == "a":
-                # VERIFICAR QUE LO INGRESADO SEA UN VALOR VALIDO
-                lat_lon = input("Introduzca latitud y longitud, separados por coma: ")
-                coordenadas = lat_lon.split(",")
+            if opcion_menu == "a":
+                localizacion_ingresada = verificar_y_obtener_pais(TOKEN)
+                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(localizacion_ingresada, alertas_nacionales)
+                mostrar_alertas_en_localizacion(alertas_en_localizacion, localizacion_ingresada)
 
-                # YA ESTÁ EN LINEA *
-                pronosticos = obtener_url(URL_ESTADO_ACTUAL)
+            elif opcion_menu == "b":
+                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(datos_localizacion_usuario, alertas_nacionales)
+                mostrar_alertas_en_localizacion(alertas_en_localizacion, datos_localizacion_usuario)
 
-                # EL USUARIO TENDRIA QUE PONER EXACTAMENTE LAS COORDENADAS DE UNA DE LAS CIUDADES DEL JSON DE PRONOSTICO ACTUAL
-                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas, pronosticos)
-                mostrar_alertas_en_localizacion(alertas_en_localizacion)
-
-            elif opcion == "b":
-
-                # YA ESTÁ EN LINEA *
-                pronosticos = obtener_url(URL_ESTADO_ACTUAL)
-
-                alertas_en_localizacion = obtener_alertas_en_localizacion_ingresada(coordenadas, pronosticos)
-                mostrar_alertas_en_localizacion(alertas_en_localizacion)
-
-        elif opcion_menu == "2":
+        elif opcion_menu == "2" and alertas_nacionales != {}:
             print("---------- Alertas a nivel nacional ----------")
-            alertas = obtener_url(URL_ALERTAS_NACIONALES)
-            mostrar_alertas_nacionales(alertas)
+            mostrar_alertas_nacionales(alertas_nacionales)
 
-        elif opcion_menu == "3":
-            print("---------- Pronóstico extendido ----------")
+        elif opcion_menu == "3" and alertas_nacionales != {}:
             ciudad_ingresada = input("Ingrese una ciudad: ").lower()
-            pronosticos = obtener_url(URL_PRONOSTICO_EXTENDIDO)
-            datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
+            datos_ciudad = buscar_ciudad(ciudad_ingresada, pronostico_extendido)
 
             while datos_ciudad == {}:
                 ciudad_ingresada = input("No se encuentra la ciudad. Intentelo nuevamente: ").lower()
-                datos_ciudad = buscar_ciudad(ciudad_ingresada, pronosticos)
-            mostrar_pronostico_en_ciudad_ingresada(datos_ciudad)
-
-            # FALTARÍA MOSTRAR (SI HAY) LAS ALERTAS PARA ESA CIUDAD
+                datos_ciudad = buscar_ciudad(ciudad_ingresada, pronostico_extendido)
+            mostrar_pronostico_en_ciudad_ingresada(datos_ciudad, alertas_nacionales)
 
         elif opcion_menu == "4":
             menu_csv()
