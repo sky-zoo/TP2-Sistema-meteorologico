@@ -50,7 +50,6 @@ def obtener_alertas_en_localizacion_ingresada(provincia, alertas): # Para el pun
         for zona in range(len(alertas[ciudad]['zones'])):
             if provincia['address']['state'].replace(" Province", "") in alertas[ciudad]['zones'][str(zona)]:
                 alertas_ciudad.append(alertas[ciudad]['description'])
-                return alertas_ciudad
     return alertas_ciudad
 
 def obtener_localizacion_usuario(token, coordenadas):
