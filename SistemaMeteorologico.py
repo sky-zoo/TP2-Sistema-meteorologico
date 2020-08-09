@@ -33,7 +33,6 @@ def obtener_url(url): # Para el punto 3
         return informacion
     return informacion.json()
 
-
 def obtener_alertas_en_localizacion_ingresada(provincia, alertas): # Para el punto 2
     """
         Obtiene las alertas en una localizacion ingresada por el usuario.
@@ -45,7 +44,6 @@ def obtener_alertas_en_localizacion_ingresada(provincia, alertas): # Para el pun
         for zona in range(len(alertas[ciudad]['zones'])):
             if provincia['address']['state'].replace(" Province", "") in alertas[ciudad]['zones'][str(zona)]:
                 alertas_ciudad.append(alertas[ciudad]['description'])
-                return alertas_ciudad
     return alertas_ciudad
 
 def obtener_localizacion_usuario(token, coordenadas):
@@ -56,7 +54,6 @@ def obtener_localizacion_usuario(token, coordenadas):
     """
     URL = f"https://us1.locationiq.com/v1/reverse.php?key={token}&lat={coordenadas[0]}&lon={coordenadas[1]}&format=json"
     datos_coordenadas = obtener_url(URL)
-    
     return datos_coordenadas
 
 def mostrar_alertas_nacionales(alertas_nacionales_json): # Este es para el punto 3
@@ -137,6 +134,7 @@ def main():
 
     alertas_nacionales = obtener_url(URL_ALERTAS_NACIONALES)
     pronostico_extendido = obtener_url(URL_PRONOSTICO_EXTENDIDO)
+
     if alertas_nacionales != {} or pronostico_extendido != {}:
         datos_localizacion_usuario = verificar_y_obtener_pais(TOKEN)
     if alertas_nacionales == {}:
@@ -148,6 +146,7 @@ def main():
         opcion = input("1. Alertas (geolocalización)\n2. Alertas (nacional)\n3. Pronóstico extendido\n4. Datos históricos\n5. Tormetas por radar\n6. Salir\nOpcion: ")
         while opcion.isnumeric() is False or int(opcion) <= 0 or int(opcion) > 6:
             opcion = input("Ingrese un número del menú: ")
+            
         if opcion == "1" and alertas_nacionales != {}:
             print("a)Alertas en geolocalizacion ingresada\nb)Alertas en geolocalizacion actual")
             opcion = input("Opcion: ").lower()
@@ -163,6 +162,7 @@ def main():
         
         elif opcion == "2" and alertas_nacionales != {}:
             mostrar_alertas_nacionales(alertas_nacionales)
+            
         elif opcion == "3" and alertas_nacionales != {}:
             ciudad_ingresada = input("Ingrese una ciudad: ").lower()
             datos_ciudad = buscar_ciudad(ciudad_ingresada, pronostico_extendido)
